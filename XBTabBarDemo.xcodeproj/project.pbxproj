@@ -1,0 +1,836 @@
+// !$*UTF8*$!
+{
+	"classes" = {
+	};
+	"objectVersion" = "56";
+	"archiveVersion" = "1";
+	"objects" = {
+		"B28B7AF69320201D1CF206EB" = {
+			"isa" = "PBXGroup";
+			"sourceTree" = "<group>";
+			"children" = (
+				"06861EA1983E826A92BF980C",
+				"E9468CA564A869B0FDFFA542",
+				"B2A5ED609A002300B9566E11",
+				"14CDA2C15934DBCF2D7FF564",
+				"FBDC4F23F93125BBEEAE800C",
+			);
+		};
+		"AA45CF0082C822F46E1F835F" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+				"CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF" = "YES";
+				"TARGETED_DEVICE_FAMILY" = "1,2";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"GCC_C_LANGUAGE_STANDARD" = "gnu17";
+				"CLANG_WARN_UNREACHABLE_CODE" = "YES";
+				"CLANG_WARN_EMPTY_BODY" = "YES";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"SDKROOT" = "iphoneos";
+				"SWIFT_VERSION" = "5.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "15.0";
+				"CLANG_ENABLE_OBJC_ARC" = "YES";
+			};
+		};
+		"B3591A28CDD697091D51D482" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "7BC211772359E280CF9C206C";
+		};
+		"587D728629DFC4028D6AFEDF" = {
+			"isa" = "XCConfigurationList";
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+			"buildConfigurations" = (
+				"A6665000000E1F0400E49A3F",
+				"7AEA7EA3A334092DBEE02C05",
+			);
+		};
+		"714FDF630B8720A985087D32" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "8EF051F3546868CEB8428902";
+		};
+		"B3216B343DE60527A19062A7" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "97A80863FB19A63B8D960BBA";
+		};
+		"06861EA1983E826A92BF980C" = {
+			"isa" = "PBXGroup";
+			"name" = "Demo";
+			"children" = (
+				"F1AAF4D9103556AC3D35B3CE",
+				"5D453F59F560D8232F6849BD",
+				"C75A19240BF03962358396E0",
+				"FBF9A02018FED522363E7D77",
+				"05F4C59AF1BA08033FC353D7",
+				"FED197A82AC6820181E3F36E",
+				"0EF15973BF67525D9D19CF7F",
+				"C6367A4D86066AF7371843AD",
+				"64DC0EDEB3F01D04A1889855",
+				"8EEA8F71345CE2966CAD7187",
+				"95732F307662E81318EA5ABD",
+				"8E82FC919B266BAE2D98EA3E",
+				"BA5FA66429D2D042FDCCC10C",
+			);
+			"sourceTree" = "<group>";
+		};
+		"4ECA7985787D6D541D18297B" = {
+			"path" = "Vendor/Masonry/MASLayoutConstraint.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"CAD605B668FD23B17342A7C7" = {
+			"path" = "Vendor/Masonry/ViewController+MASAdditions.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"98146F85E22CE99C52624CAA" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"A88C69B0DE52F551DA41B9C8" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4ECA7985787D6D541D18297B";
+		};
+		"FB5DE9560AEE5B51F5273928" = {
+			"path" = "Vendor/Masonry/View+MASAdditions.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"A00081F140AF3EF4697FAB53" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"HEADER_SEARCH_PATHS" = (
+					"$(inherited)",
+					"$(SRCROOT)/XBTabBar",
+					"$(SRCROOT)/Vendor",
+					"$(SRCROOT)/Demo",
+				);
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+				"SWIFT_OBJC_BRIDGING_HEADER" = "Demo/XBTabBarDemo-Bridging-Header.h";
+				"INFOPLIST_FILE" = "Demo/Info.plist";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.xbtabbar.demo";
+				"OTHER_LDFLAGS" = (
+					"$(inherited)",
+					"-framework",
+					"UIKit",
+					"-framework",
+					"QuartzCore",
+				);
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+			};
+		};
+		"E9468CA564A869B0FDFFA542" = {
+			"isa" = "PBXGroup";
+			"name" = "XBTabBar";
+			"children" = (
+				"7A95DDEB0E21769E968493CA",
+				"9C4233183FB001AC633CFEFF",
+				"2B16F8CE085E2C4C5465509B",
+				"7BC211772359E280CF9C206C",
+				"47A2171A17079C1C10E8D8D2",
+				"D505437B4C90B7E06A19731B",
+			);
+			"sourceTree" = "<group>";
+		};
+		"9C4233183FB001AC633CFEFF" = {
+			"path" = "XBTabBar/XBTabBarItem.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"44540E785A9B77C49B15FB27" = {
+			"path" = "Vendor/Masonry/MASViewAttribute.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"A4857E9F6FF3D1EA05B24DE0" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"888819950B902BD0EC23A9AA" = {
+			"path" = "Vendor/Masonry/MASConstraintMaker.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"79E887E2CE90C5962FE423C9" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"INFOPLIST_FILE" = "Demo/Info.plist";
+				"ENABLE_TESTABILITY" = "YES";
+				"GCC_OPTIMIZATION_LEVEL" = "0";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"SWIFT_OBJC_BRIDGING_HEADER" = "Demo/XBTabBarDemo-Bridging-Header.h";
+				"HEADER_SEARCH_PATHS" = (
+					"$(inherited)",
+					"$(SRCROOT)/XBTabBar",
+					"$(SRCROOT)/Vendor",
+					"$(SRCROOT)/Demo",
+				);
+				"CODE_SIGN_STYLE" = "Automatic";
+				"OTHER_LDFLAGS" = (
+					"$(inherited)",
+					"-framework",
+					"UIKit",
+					"-framework",
+					"QuartzCore",
+				);
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.xbtabbar.demo";
+				"GCC_PREPROCESSOR_DEFINITIONS" = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+			};
+		};
+		"8AB592E4F40718D447B7F382" = {
+			"path" = "Vendor/Masonry/MASCompositeConstraint.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"98ACB41EE7A9131C1876371E" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "FED197A82AC6820181E3F36E";
+		};
+		"88008D13B2CE01658EA81E50" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "D505437B4C90B7E06A19731B";
+		};
+		"557169BFDA8AB370042E2669" = {
+			"buildConfigurationList" = "587D728629DFC4028D6AFEDF";
+			"productReference" = "05B4B09660ED39C148591D26";
+			"productType" = "com.apple.product-type.bundle.unit-test";
+			"productName" = "XBTabBarTests";
+			"isa" = "PBXNativeTarget";
+			"buildPhases" = (
+				"BC240C47C5208228858FE562",
+				"A4857E9F6FF3D1EA05B24DE0",
+				"98146F85E22CE99C52624CAA",
+			);
+			"dependencies" = (
+				"DE58E2B17C19600779694943",
+			);
+			"name" = "XBTabBarTests";
+			"buildRules" = (
+			);
+		};
+		"5681257F6734005937274402" = {
+			"path" = "Vendor/Masonry/NSLayoutConstraint+MASDebugAdditions.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"14CDA2C15934DBCF2D7FF564" = {
+			"isa" = "PBXGroup";
+			"name" = "Tests";
+			"children" = (
+				"4EB247BFB993663840E001E0",
+				"4BC71A6C6C5395D94EE72FD2",
+			);
+			"sourceTree" = "<group>";
+		};
+		"218098A2609ADEB46AFB957C" = {
+			"path" = "Vendor/Masonry/Masonry.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"C75A19240BF03962358396E0" = {
+			"path" = "Demo/Info.plist";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.plist.xml";
+			"sourceTree" = "<group>";
+		};
+		"70A93C7D2133574ED5091FD7" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "245C80999BAF33612897D326";
+		};
+		"8D0A2E1C54D919E8D8A48742" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "B864CADBD486A0C537EFA67C";
+		};
+		"D721E4C300112184859CA0FA" = {
+			"path" = "Vendor/Masonry/NSArray+MASAdditions.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"98F54143AB4E86B28C3AFEE0" = {
+			"buildConfigurationList" = "BD59A88C5EC2D65E34727A49";
+			"targets" = (
+				"D0E2ABC3D80FE1067E8AD8ED",
+				"557169BFDA8AB370042E2669",
+			);
+			"developmentRegion" = "zh_CN";
+			"knownRegions" = (
+				"zh_CN",
+				"en",
+				"Base",
+			);
+			"isa" = "PBXProject";
+			"compatibilityVersion" = "Xcode 14.0";
+			"productRefGroup" = "FBDC4F23F93125BBEEAE800C";
+			"projectDirPath" = "";
+			"attributes" = {
+				"LastUpgradeCheck" = "1600";
+				"BuildIndependentTargetsInParallel" = "YES";
+				"TargetAttributes" = {
+					"557169BFDA8AB370042E2669" = {
+						"TestTargetID" = "D0E2ABC3D80FE1067E8AD8ED";
+					};
+				};
+			};
+			"hasScannedForEncodings" = "0";
+			"projectRoot" = "";
+			"mainGroup" = "B28B7AF69320201D1CF206EB";
+		};
+		"FBDC4F23F93125BBEEAE800C" = {
+			"isa" = "PBXGroup";
+			"name" = "Products";
+			"children" = (
+				"845F65209D19F1E91A3C573D",
+				"05B4B09660ED39C148591D26",
+			);
+			"sourceTree" = "<group>";
+		};
+		"245C80999BAF33612897D326" = {
+			"path" = "Vendor/Masonry/ViewController+MASAdditions.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"7A95DDEB0E21769E968493CA" = {
+			"path" = "XBTabBar/XBTabBarItem.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"DB9789F8DA51135AC477FD7D" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "44540E785A9B77C49B15FB27";
+		};
+		"CEFCB8ED2FBBDC32F0D93272" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "FBF9A02018FED522363E7D77";
+		};
+		"DB8BF58B205897CD1F523426" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"617A1BCAE0CBB6916E243028" = {
+			"path" = "Vendor/Masonry/View+MASShorthandAdditions.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"47A2171A17079C1C10E8D8D2" = {
+			"path" = "XBTabBar/XBTabContainerViewController.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"0EF15973BF67525D9D19CF7F" = {
+			"path" = "Demo/XBTabBarDemo-Bridging-Header.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"3041AE76937E007EAD4D4CC7" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"FBF9A02018FED522363E7D77" = {
+			"path" = "Demo/SwiftInteropCheck.swift";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"sourceTree" = "<group>";
+		};
+		"ADFA79BECB262D1CB30AF212" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "8B77503B1054360D213E105D";
+		};
+		"1DABB101F98F2C6D3038D6E9" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "9C4233183FB001AC633CFEFF";
+		};
+		"7AEA7EA3A334092DBEE02C05" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				"BUNDLE_LOADER" = "$(TEST_HOST)";
+				"DEBUG_INFORMATION_FORMAT" = "dwarf-with-dsym";
+				"TEST_HOST" = "$(BUILT_PRODUCTS_DIR)/XBTabBarDemo.app/XBTabBarDemo";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"HEADER_SEARCH_PATHS" = (
+					"$(inherited)",
+					"$(SRCROOT)/XBTabBar",
+					"$(SRCROOT)/Demo",
+				);
+				"CODE_SIGN_STYLE" = "Automatic";
+				"OTHER_LDFLAGS" = (
+					"$(inherited)",
+					"-framework",
+					"XCTest",
+				);
+				"FRAMEWORK_SEARCH_PATHS" = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.xbtabbar.demo.tests";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+			};
+		};
+		"C6367A4D86066AF7371843AD" = {
+			"path" = "Demo/main.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"C6348578BE934C3EA118E9F3" = {
+			"path" = "Vendor/Masonry/MASConstraintMaker.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"3E80DFD0FB4816AA0FB570CF" = {
+			"path" = "Vendor/Masonry/MASUtilities.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"5C3A0CBD9B2A3786CCF01453" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C6348578BE934C3EA118E9F3";
+		};
+		"57600A0A162E578F8922328A" = {
+			"path" = "Vendor/Masonry/MASCompositeConstraint.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"28E30B7D232F9B4B78778CA2" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"234447DA6DD85A4AFF755785",
+				"CEFCB8ED2FBBDC32F0D93272",
+				"98ACB41EE7A9131C1876371E",
+				"FE3323CF895C5D6434269DF1",
+				"1DABB101F98F2C6D3038D6E9",
+				"B3591A28CDD697091D51D482",
+				"88008D13B2CE01658EA81E50",
+				"4217953BE88D6D17648BC161",
+				"8D0A2E1C54D919E8D8A48742",
+				"5C3A0CBD9B2A3786CCF01453",
+				"A88C69B0DE52F551DA41B9C8",
+				"DB9789F8DA51135AC477FD7D",
+				"714FDF630B8720A985087D32",
+				"ADFA79BECB262D1CB30AF212",
+				"B3216B343DE60527A19062A7",
+				"803CE488D658DADA27FDEED2",
+				"70A93C7D2133574ED5091FD7",
+				"A2719C0CEAA98A5183F0C9C8",
+				"47B668B6425DA4BF30DA3AD7",
+				"3072370385BBF78CADEF7519",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"C0248170B0F995BD0A317D9B" = {
+			"path" = "Vendor/Masonry/MASLayoutConstraint.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"FE3323CF895C5D6434269DF1" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C6367A4D86066AF7371843AD";
+		};
+		"BD59A88C5EC2D65E34727A49" = {
+			"isa" = "XCConfigurationList";
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+			"buildConfigurations" = (
+				"657EE81F72B04E344AD48704",
+				"AA45CF0082C822F46E1F835F",
+			);
+		};
+		"D799BAE6088A90139B415FCC" = {
+			"isa" = "PBXContainerItemProxy";
+			"containerPortal" = "98F54143AB4E86B28C3AFEE0";
+			"remoteGlobalIDString" = "D0E2ABC3D80FE1067E8AD8ED";
+			"remoteInfo" = "XBTabBarDemo";
+			"proxyType" = "1";
+		};
+		"A6665000000E1F0400E49A3F" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				"BUNDLE_LOADER" = "$(TEST_HOST)";
+				"GCC_PREPROCESSOR_DEFINITIONS" = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"TEST_HOST" = "$(BUILT_PRODUCTS_DIR)/XBTabBarDemo.app/XBTabBarDemo";
+				"ENABLE_TESTABILITY" = "YES";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"GCC_OPTIMIZATION_LEVEL" = "0";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"HEADER_SEARCH_PATHS" = (
+					"$(inherited)",
+					"$(SRCROOT)/XBTabBar",
+					"$(SRCROOT)/Demo",
+				);
+				"CODE_SIGN_STYLE" = "Automatic";
+				"OTHER_LDFLAGS" = (
+					"$(inherited)",
+					"-framework",
+					"XCTest",
+				);
+				"FRAMEWORK_SEARCH_PATHS" = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "com.xbtabbar.demo.tests";
+				"PRODUCT_NAME" = "$(TARGET_NAME)";
+			};
+		};
+		"B2A5ED609A002300B9566E11" = {
+			"isa" = "PBXGroup";
+			"name" = "Vendor/Masonry";
+			"children" = (
+				"B09EE5C7E7B4D2F02C8726AA",
+				"8AB592E4F40718D447B7F382",
+				"57600A0A162E578F8922328A",
+				"C23ACEDF99DE6BF2528405FE",
+				"F3FE4D5A489BA02131E1810E",
+				"B864CADBD486A0C537EFA67C",
+				"888819950B902BD0EC23A9AA",
+				"C6348578BE934C3EA118E9F3",
+				"C0248170B0F995BD0A317D9B",
+				"4ECA7985787D6D541D18297B",
+				"3E80DFD0FB4816AA0FB570CF",
+				"18A4C3D0610894BB6C6E766B",
+				"44540E785A9B77C49B15FB27",
+				"2AA1E4BBE80E582EC24523FB",
+				"8EF051F3546868CEB8428902",
+				"218098A2609ADEB46AFB957C",
+				"D721E4C300112184859CA0FA",
+				"8B77503B1054360D213E105D",
+				"1CB71B797061B95AF26A883E",
+				"5681257F6734005937274402",
+				"97A80863FB19A63B8D960BBA",
+				"FB5DE9560AEE5B51F5273928",
+				"401901F77EE07524A8E5D441",
+				"617A1BCAE0CBB6916E243028",
+				"CAD605B668FD23B17342A7C7",
+				"245C80999BAF33612897D326",
+			);
+			"sourceTree" = "<group>";
+		};
+		"18A4C3D0610894BB6C6E766B" = {
+			"path" = "Vendor/Masonry/MASViewAttribute.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"657EE81F72B04E344AD48704" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"DEBUG_INFORMATION_FORMAT" = "dwarf";
+				"CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF" = "YES";
+				"TARGETED_DEVICE_FAMILY" = "1,2";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"GCC_C_LANGUAGE_STANDARD" = "gnu17";
+				"CLANG_WARN_UNREACHABLE_CODE" = "YES";
+				"ENABLE_TESTABILITY" = "YES";
+				"CLANG_WARN_EMPTY_BODY" = "YES";
+				"GCC_OPTIMIZATION_LEVEL" = "0";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"SDKROOT" = "iphoneos";
+				"GCC_PREPROCESSOR_DEFINITIONS" = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				"SWIFT_VERSION" = "5.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "15.0";
+				"CLANG_ENABLE_OBJC_ARC" = "YES";
+			};
+		};
+		"FED197A82AC6820181E3F36E" = {
+			"path" = "Demo/XBDemoController.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"B864CADBD486A0C537EFA67C" = {
+			"path" = "Vendor/Masonry/MASConstraint.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"C23ACEDF99DE6BF2528405FE" = {
+			"path" = "Vendor/Masonry/MASConstraint+Private.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"5D453F59F560D8232F6849BD" = {
+			"path" = "Demo/AppDelegate.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"8EF051F3546868CEB8428902" = {
+			"path" = "Vendor/Masonry/MASViewConstraint.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"803CE488D658DADA27FDEED2" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "401901F77EE07524A8E5D441";
+		};
+		"D0E2ABC3D80FE1067E8AD8ED" = {
+			"buildConfigurationList" = "1D5BE549778104DBF1E966E6";
+			"productReference" = "845F65209D19F1E91A3C573D";
+			"productType" = "com.apple.product-type.application";
+			"productName" = "XBTabBarDemo";
+			"isa" = "PBXNativeTarget";
+			"buildPhases" = (
+				"28E30B7D232F9B4B78778CA2",
+				"DB8BF58B205897CD1F523426",
+				"3041AE76937E007EAD4D4CC7",
+			);
+			"dependencies" = (
+			);
+			"name" = "XBTabBarDemo";
+			"buildRules" = (
+			);
+		};
+		"1CB71B797061B95AF26A883E" = {
+			"path" = "Vendor/Masonry/NSArray+MASShorthandAdditions.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"B09EE5C7E7B4D2F02C8726AA" = {
+			"path" = "Vendor/Masonry/LICENSE";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text";
+			"sourceTree" = "<group>";
+		};
+		"BC240C47C5208228858FE562" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"EC3F5444B68327A555A37596",
+				"A395EB6BF8A533868CBF0BF3",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"D505437B4C90B7E06A19731B" = {
+			"path" = "XBTabBar/XBTabContainerViewController.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"7BC211772359E280CF9C206C" = {
+			"path" = "XBTabBar/XBTabBarView.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"4217953BE88D6D17648BC161" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "57600A0A162E578F8922328A";
+		};
+		"234447DA6DD85A4AFF755785" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "5D453F59F560D8232F6849BD";
+		};
+		"97A80863FB19A63B8D960BBA" = {
+			"path" = "Vendor/Masonry/NSLayoutConstraint+MASDebugAdditions.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"1D5BE549778104DBF1E966E6" = {
+			"isa" = "XCConfigurationList";
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+			"buildConfigurations" = (
+				"79E887E2CE90C5962FE423C9",
+				"A00081F140AF3EF4697FAB53",
+			);
+		};
+		"8B77503B1054360D213E105D" = {
+			"path" = "Vendor/Masonry/NSArray+MASAdditions.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"05F4C59AF1BA08033FC353D7" = {
+			"path" = "Demo/XBDemoController.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"2B16F8CE085E2C4C5465509B" = {
+			"path" = "XBTabBar/XBTabBarView.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"EC3F5444B68327A555A37596" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4EB247BFB993663840E001E0";
+		};
+		"2AA1E4BBE80E582EC24523FB" = {
+			"path" = "Vendor/Masonry/MASViewConstraint.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"845F65209D19F1E91A3C573D" = {
+			"path" = "XBTabBarDemo.app";
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.application";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"401901F77EE07524A8E5D441" = {
+			"path" = "Vendor/Masonry/View+MASAdditions.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"DE58E2B17C19600779694943" = {
+			"isa" = "PBXTargetDependency";
+			"target" = "D0E2ABC3D80FE1067E8AD8ED";
+			"targetProxy" = "D799BAE6088A90139B415FCC";
+		};
+		"05B4B09660ED39C148591D26" = {
+			"path" = "XBTabBarTests.xctest";
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.cfbundle";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"4EB247BFB993663840E001E0" = {
+			"path" = "Tests/XBTabBarTests.m";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"sourceTree" = "<group>";
+		};
+		"F3FE4D5A489BA02131E1810E" = {
+			"path" = "Vendor/Masonry/MASConstraint.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"F1AAF4D9103556AC3D35B3CE" = {
+			"path" = "Demo/AppDelegate.h";
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"sourceTree" = "<group>";
+		};
+		"64DC0EDEB3F01D04A1889855" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"path" = "Demo/XBCatalogController.h";
+			"sourceTree" = "<group>";
+		};
+		"8EEA8F71345CE2966CAD7187" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"path" = "Demo/XBCatalogController.m";
+			"sourceTree" = "<group>";
+		};
+		"A2719C0CEAA98A5183F0C9C8" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "8EEA8F71345CE2966CAD7187";
+		};
+		"95732F307662E81318EA5ABD" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"path" = "Demo/XBEmbeddedExamples.m";
+			"sourceTree" = "<group>";
+		};
+		"47B668B6425DA4BF30DA3AD7" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "95732F307662E81318EA5ABD";
+		};
+		"8E82FC919B266BAE2D98EA3E" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.h";
+			"path" = "Demo/XBShowcaseController.h";
+			"sourceTree" = "<group>";
+		};
+		"BA5FA66429D2D042FDCCC10C" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"path" = "Demo/XBShowcaseController.m";
+			"sourceTree" = "<group>";
+		};
+		"3072370385BBF78CADEF7519" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "BA5FA66429D2D042FDCCC10C";
+		};
+		"4BC71A6C6C5395D94EE72FD2" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.c.objc";
+			"path" = "Tests/XBDemoCatalogTests.m";
+			"sourceTree" = "<group>";
+		};
+		"A395EB6BF8A533868CBF0BF3" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4BC71A6C6C5395D94EE72FD2";
+		};
+	};
+	"rootObject" = "98F54143AB4E86B28C3AFEE0";
+}
