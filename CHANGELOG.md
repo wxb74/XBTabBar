@@ -1,5 +1,12 @@
 # Changelog
 
+## CocoaPods 接入与工程整理 — 2026-10-21
+
+- 新增 XBTabBar.podspec，声明 UIKit、QuartzCore 与 Masonry 依赖。
+- Demo 改为本地 XBTabBar Pod 接入，移除手工复制的 Vendor/Masonry。
+- 添加 Podfile、Podfile.lock 和 workspace，README 补充 GitHub tag 安装方式。
+- 修复 Xcode 分组 / 文件引用的路径设置，导航器显示实际文件名。
+
 ## Demo 0.2.0 — 2026-10-21
 
 - 新增按基础样式、外观定制、交互与容器、适配与接入分组的目录首页，共 18 个入口。

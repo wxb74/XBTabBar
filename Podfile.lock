@@ -1,0 +1,23 @@
+PODS:
+  - Masonry (1.1.0)
+  - XBTabBar (0.1.0):
+    - Masonry (~> 1.1)
+
+DEPENDENCIES:
+  - XBTabBar (from `.`)
+
+SPEC REPOS:
+  trunk:
+    - Masonry
+
+EXTERNAL SOURCES:
+  XBTabBar:
+    :path: "."
+
+SPEC CHECKSUMS:
+  Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
+  XBTabBar: 4e634576155230d37338b2188926525041fa5b25
+
+PODFILE CHECKSUM: fbccd40bb5dd678cca26254ef4cf0798247831df
+
+COCOAPODS: 1.16.2

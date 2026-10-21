@@ -2,7 +2,7 @@
 
 Objective-C 多入口底栏组件，最低 iOS 15，依赖 UIKit、Masonry。支持超过五个入口全部直显、独立导航栈、凸起按钮、Action、角标、六种图文布局及点击动画。
 
-组件版本 **0.1.0**，Demo 版本 **0.2.0**。组件不依赖项目 PCH、主题、权限或网络逻辑；Demo 内置 Masonry，可离线运行。
+组件版本 **0.1.0**，Demo 版本 **0.2.0**。组件不依赖项目 PCH、主题、权限或网络逻辑；Demo 使用 CocoaPods 安装 XBTabBar 和 Masonry，不再包含手工复制的第三方源码。
 
 ## 预览
 
@@ -10,14 +10,26 @@ Objective-C 多入口底栏组件，最低 iOS 15，依赖 UIKit、Masonry。支
 
 ## 接入组件
 
-将 `XBTabBar/` 中六个 `.h/.m` 文件加入目标工程，并链接 Masonry。也可以使用 CocoaPods 安装 Masonry：
+### CocoaPods
+
+在业务工程的 `Podfile` 中添加：
 
 ```ruby
-pod 'Masonry', '~> 1.1'
+platform :ios, '15.0'
+
+target 'YourApp' do
+  pod 'XBTabBar', :git => 'https://github.com/wxb74/XBTabBar.git', :tag => 'v0.1.0'
+end
 ```
 
+执行 `pod install`，随后打开生成的 `.xcworkspace`。Masonry 由 `XBTabBar.podspec` 声明并自动安装，无需复制 Masonry 源码。
+
+本版本通过 GitHub tag 提供安装，尚未发布到 CocoaPods trunk。开发仓库中的本地组件可使用 `pod 'XBTabBar', :path => '.'`，Demo 已采用此方式。
+
+### 初始化
+
 ```objc
-#import "XBTabContainerViewController.h"
+#import <XBTabBar/XBTabContainerViewController.h>
 
 XBTabContainerViewController *tabs = [XBTabContainerViewController new];
 UINavigationController *home = [[UINavigationController alloc]
@@ -42,7 +54,14 @@ self.window.rootViewController = tabs;
 
 ## 运行
 
-打开 `XBTabBarDemo.xcodeproj`，选择 `XBTabBarDemo` scheme 与模拟器，按 ⌘R。应用先展示 **示例目录**，点击 cell 进入对应样式或功能页。
+在仓库根目录执行：
+
+```sh
+pod install
+open XBTabBarDemo.xcworkspace
+```
+
+选择 `XBTabBarDemo` scheme 与模拟器，按 ⌘R。应用先展示 **示例目录**，点击 cell 进入对应样式或功能页。首次安装依赖需要网络，仓库提交 `Podfile.lock` 锁定版本；`Pods/` 是本地生成目录。
 
 - 目录使用四个分组、18 个入口，每个专题独立保存当前配置。
 - 底栏容器示例全屏打开，在导航栏点击“示例目录”返回；独立视图、多容器和接入页通过系统导航进入并返回。
@@ -84,6 +103,8 @@ RTL 是从右向左布局，常用于阿拉伯语等语言的适配。底栏视�
 - `Demo/XBDemoController.m`：原版综合交互面板。
 - `Demo/SwiftInteropCheck.swift`：Swift 创建示例及 Objective-C 可调用的工厂。
 - `XBTabBar/`：组件源码和接入说明。
+- `XBTabBar.podspec`：组件、公开头文件和 Masonry 依赖声明。
+- `Podfile` / `Podfile.lock`：Demo 的 CocoaPods 接入及版本锁定。
 - `Tests/XBTabBarTests.m`：原组件的 13 项回归测试。
 - `Tests/XBDemoCatalogTests.m`：目录和扩展 Demo 的 7 项集成检查。
 - `Documentation/`：目录及示例页运行截图。
@@ -93,16 +114,21 @@ RTL 是从右向左布局，常用于阿拉伯语等语言的适配。底栏视�
 在 Xcode 按 ⌘U 执行 20 项测试。验证记录见 [Verification.md](Verification.md)，截图索引见 [Documentation/README.md](Documentation/README.md)。
 
 ```sh
-xcodebuild -project XBTabBarDemo.xcodeproj -scheme XBTabBarDemo \
+xcodebuild -workspace XBTabBarDemo.xcworkspace -scheme XBTabBarDemo \
   -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath /tmp/XBTabBarDemo-build CODE_SIGNING_ALLOWED=NO build-for-testing
 
 # 将 name 替换为本机可用模拟器名称。
-xcodebuild -project XBTabBarDemo.xcodeproj -scheme XBTabBarDemo \
+xcodebuild -workspace XBTabBarDemo.xcworkspace -scheme XBTabBarDemo \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
   -derivedDataPath /tmp/XBTabBarDemo-build CODE_SIGNING_ALLOWED=NO test
 ```
 
 交互返回取消、iPad / 旋转 / 极窄窗口以及系统辅助功能运行时切换，仍需实际体验检查。iOS 15 已作为部署目标构建，当前未在 iOS 15 运行。
 
-组件说明见 [XBTabBar/README.md](XBTabBar/README.md)，版本记录见 [CHANGELOG.md](CHANGELOG.md)。XBTabBar 和 Demo 使用 MIT 许可，Masonry 保留 [原始许可](Vendor/Masonry/LICENSE)。当前以源码和离线 Demo 交付。
+组件说明见 [XBTabBar/README.md](XBTabBar/README.md)，版本记录见 [CHANGELOG.md](CHANGELOG.md)。XBTabBar 和 Demo 使用 MIT 许可，Masonry 的原始许可由 CocoaPods 随依赖安装提供。
+
+
+## Xcode 分组与文件名
+
+`Demo`、`XBTabBar`、`Tests` 分组各自保存目录路径，文件引用只保存文件名，因此导航器显示 `XBCatalogController.m`、`XBTabBarView.m` 等实际名称。文件仍按磁盘目录组织，源码名称没有增加目录前缀。

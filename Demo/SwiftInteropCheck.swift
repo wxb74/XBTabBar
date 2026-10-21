@@ -1,4 +1,5 @@
 import UIKit
+import XBTabBar
 
 /// 编入 Demo 的最小 Swift 接入样例，保证 Objective-C 接口可从 Swift 导入。
 @MainActor

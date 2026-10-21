@@ -4,3 +4,6 @@ build/
 *.xcuserstate
 xcuserdata/
 *.xcresult
+
+# CocoaPods dependencies are installed locally; keep Podfile.lock.
+Pods/

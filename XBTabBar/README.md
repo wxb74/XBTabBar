@@ -1,7 +1,13 @@
 # XBTabBar
 
 Objective-C 多入口组件，版本 `0.1.0`，最低 iOS 15，仅依赖 UIKit、Masonry。
-复制本目录六个 `.h/.m` 文件即可使用，不依赖本项目 PCH、主题、权限、网络或其它 TabBar SDK。
+推荐通过 CocoaPods 从 GitHub tag 安装：
+
+```ruby
+pod 'XBTabBar', :git => 'https://github.com/wxb74/XBTabBar.git', :tag => 'v0.1.0'
+```
+
+执行 `pod install` 后打开 `.xcworkspace`，Masonry 自动作为依赖安装。组件不依赖项目 PCH、主题、权限、网络或其它 TabBar SDK；仍可复制六个 `.h/.m` 文件并自行链接 Masonry。
 
 ## 职责和取舍
 
@@ -56,7 +62,7 @@ Objective-C 多入口组件，版本 `0.1.0`，最低 iOS 15，仅依赖 UIKit�
 | 仅图标自动居中、图标与标题位置调整 | 已有纯图/纯文居中、六种排列及边距配置；没有图标/标题各自任意坐标偏移 |
 | 自定义角标视图、位置/字体/形状、角标动画及恢复显示 | 当前为固定 UILabel 角标，可按项设置颜色/文字角标高度；没有其它扩展 |
 | 面向 UIView、UITabBarItem、UIBarButtonItem 的通用角标扩展 | 有意不扩展到全局控件，角标职责限制在本组件 |
-| CocoaPods / SPM / Carthage 等发布方式 | 支持源码复制接入；独立 Demo 内附离线依赖、XCTest 和参与编译的 Swift 示例，尚未发布包管理器版本 |
+| CocoaPods / SPM / Carthage 等发布方式 | 支持 GitHub tag CocoaPods 接入与源码复制；Demo 使用本地 Pod、XCTest 和实际 Swift 示例，尚未发布到 CocoaPods trunk |
 
 来源：[CYLTabBarController 官方说明](https://github.com/ChenYilong/CYLTabBarController)、[角标协议](https://github.com/ChenYilong/CYLTabBarController/blob/master/CYLTabBarController/CYLBadgeProtocol.h)。
 
@@ -339,10 +345,10 @@ tabs.tabBar.selectionAnimation = ^(UIView *imageView, BOOL reselected) {
 
 ## 独立 Demo 与验证
 
-独立工程目录为 `XBTabBarDemo`，打开 `XBTabBarDemo.xcodeproj`，选择同名 scheme 和 iPhone/iPad 模拟器后运行。工程内提供完整组件源码及 Masonry，不需要 CocoaPods 或网络下载；真机运行需自行选择 Development Team。
+独立工程目录为 `XBTabBarDemo`，先在根目录执行 `pod install`，打开 `XBTabBarDemo.xcworkspace`，选择同名 scheme 和 iPhone/iPad 模拟器后运行。Demo 通过本地 XBTabBar Pod 自动安装 Masonry；真机运行需自行选择 Development Team。
 
 `Tests/XBTabBarTests.m` 是组件回归测试源文件，Demo 的 `XBTabBarTests` target 编译同一份测试。覆盖默认标识重排/移除恢复、显式标识重建、配置深复制、外观与安全区、解码初始化、禁用/拒绝/静默选择、Action 混排、准入中重建、出现事件和导航代理恢复。Demo 的 `SwiftInteropCheck.swift` 实际参与编译，验证 Swift 接入接口。
 
 测试在 Xcode 中使用 Product → Test（⌘U）。组件部署目标为 iOS 15；测试宿主可使用当前 Xcode 支持的模拟器。交互返回取消、辅助功能切换及窄屏下多入口的视觉效果仍需按上文列表人工回归。
 
-版本记录见 [CHANGELOG.md](CHANGELOG.md)，许可见 [LICENSE](LICENSE)。Masonry 使用其自身 MIT 许可，Demo 在 `Vendor/Masonry/LICENSE` 保留原文。
+版本记录见 [CHANGELOG.md](CHANGELOG.md)，许可见 [LICENSE](LICENSE)。Masonry 使用其自身 MIT 许可，依赖安装后由 CocoaPods 保留原文。

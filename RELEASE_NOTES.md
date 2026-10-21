@@ -9,7 +9,7 @@
 - 导航隐藏恢复、安全区、RTL、基础 VoiceOver 与系统辅助功能偏好适配。
 - 四组 18 个可操作示例，包括独立按钮栏、双容器、解码与 Swift 实际接入。
 
-最低 iOS 15，仅依赖 UIKit、Masonry；源码复制接入，Demo 附离线 Masonry。
+最低 iOS 15，仅依赖 UIKit、Masonry；支持 GitHub tag CocoaPods 接入；Demo 通过本地 XBTabBar Pod 自动安装 Masonry。
 
 验证：Xcode 27.0 构建通过，iPhone 18 Pro / iOS 27.0 模拟器 20 项测试通过。最低 iOS 15 尚未完成运行验证，交互返回取消及完整辅助功能仍需人工回归。
 

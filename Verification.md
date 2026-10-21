@@ -3,7 +3,10 @@
 日期：2026-10-21（Asia/Shanghai）。组件源码保持 0.1.0。
 
 - 工具链：Xcode 27.0（27A266a）、iOS Simulator 27.0 SDK。
-- 独立 `build-for-testing` 成功，包含 arm64 / x86_64 模拟器构建、Swift 编译与 Objective-C 工厂调用。
+- CocoaPods workspace 的 `build-for-testing` 成功，包含 arm64 / x86_64 模拟器构建、Swift 的 `import XBTabBar` 与 Objective-C 工厂调用。
+- `pod install --no-repo-update` 成功：本地 XBTabBar 0.1.0、Masonry 1.1.0；`pod lib lint --quick --allow-warnings` 通过。
+- 项目已移除 Vendor/Masonry，源码不再手工参与 App 编译；Masonry 由 podspec 依赖安装。
+- Demo / XBTabBar / Tests 分组各自保存目录路径，文件引用保存实际文件名。
 - 运行环境：iPhone 18 Pro / iOS 27.0。
 - **20 项测试通过，0 失败**：13 项原组件测试 + 7 项扩展 Demo 集成检查。
 - 目录含四个分组、18 个独立入口；检查标识唯一、图标可加载及所有入口可构建和布局。
@@ -13,7 +16,7 @@
 - 运行截图见 [Documentation/README.md](Documentation/README.md)；截图来自模拟器测试中实际展示的界面，不加入 App 资源。
 - Demo / XBTabBar 代码无本轮构建编译警告。Masonry 仍有当前 SDK 下的原有弃用、noescape 和调试字典重复 key 提示，未修改第三方源码。
 
-测试文件：`Tests/XBTabBarTests.m`、`Tests/XBDemoCatalogTests.m`。可在 Xcode 中按 ⌘U 重新运行全部检查，仓库不包含派生产物。
+测试文件：`Tests/XBTabBarTests.m`、`Tests/XBDemoCatalogTests.m`。执行 `pod install` 并打开 `XBTabBarDemo.xcworkspace`，可在 Xcode 中按 ⌘U 重新运行全部检查，仓库不包含派生产物。
 
 ## 验证边界
 
