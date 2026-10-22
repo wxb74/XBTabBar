@@ -31,6 +31,159 @@
 @interface XBTabBarTests : XCTestCase
 @end
 @implementation XBTabBarTests
+- (void)testAutomaticPlacementUsesSystemTraitsWithoutReplacingPages {
+    XBTabContainerViewController *tabs = [self twoPages];
+    XCTAssertEqual(tabs.tabBarPlacement, XBTabBarPlacementAutomatic);
+    UIViewController *page = tabs.selectedViewController;
+    [tabs loadViewIfNeeded];
+    tabs.view.frame = CGRectMake(0, 0, 466, 678);
+    [tabs.view layoutIfNeeded];
+    XBTabBarPlacement expected = XBTabBarPlacementBottom;
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 270100
+    if (@available(iOS 27.1, *)) {
+        if (tabs.traitCollection.verticalBarEdge == UIVerticalBarEdgeLeading) expected = XBTabBarPlacementFloatingLeft;
+        if (tabs.traitCollection.verticalBarEdge == UIVerticalBarEdgeTrailing) expected = XBTabBarPlacementFloatingRight;
+    }
+#endif
+    XCTAssertEqual(tabs.resolvedTabBarPlacement, expected);
+    XCTAssertEqual(tabs.selectedViewController, page);
+    XCTAssertEqual(tabs.tabBar.isVertical, expected != XBTabBarPlacementBottom);
+}
+
+- (void)testFloatingPlacementChangesPreserveBusinessInsets {
+    XBTabContainerViewController *tabs = [XBTabContainerViewController new];
+    UIViewController *page = [UIViewController new];
+    UIEdgeInsets original = UIEdgeInsetsMake(1, 2, 7, 4);
+    page.additionalSafeAreaInsets = original;
+    tabs.viewControllers = @[page];
+    [tabs loadViewIfNeeded]; tabs.view.frame = CGRectMake(0, 0, 320, 500);
+    for (NSUInteger i = 0; i < 20; i++) tabs.tabBarPlacement = i % 2 ? XBTabBarPlacementFloatingRight : XBTabBarPlacementFloatingLeft;
+    XCTAssertEqual(page.additionalSafeAreaInsets.left, original.left);
+    XCTAssertEqual(page.additionalSafeAreaInsets.right, original.right + 80);
+    XCTAssertEqual(page.additionalSafeAreaInsets.bottom, original.bottom);
+    [tabs setTabBarHidden:YES animated:NO];
+    XCTAssertTrue(UIEdgeInsetsEqualToEdgeInsets(page.additionalSafeAreaInsets, original));
+    [tabs setViewControllers:@[] tabBarItems:@[]];
+    XCTAssertTrue(UIEdgeInsetsEqualToEdgeInsets(page.additionalSafeAreaInsets, original));
+}
+
+- (void)testVerticalSelectedImageOnlyFallsBackToTitleWhenUnselected {
+    XBTabBarView *bar = [XBTabBarView new];
+    XBTabBarItem *item = [[XBTabBarItem alloc] initWithIdentifier:@"image" title:@"课程"
+                                                        image:nil selectedImage:[UIImage systemImageNamed:@"play"]];
+    [bar setItems:@[[self page:@"home"], item]];
+    bar.vertical = YES;
+    UIControl *button = [bar valueForKey:@"buttons"][1];
+    XCTAssertFalse([[button valueForKey:@"textLabel"] isHidden]);
+    XCTAssertEqualObjects(button.accessibilityLabel, @"课程");
+    bar.selectedIndex = 1;
+    XCTAssertTrue([[button valueForKey:@"textLabel"] isHidden]);
+    XCTAssertNotNil([[button valueForKey:@"iconView"] image]);
+}
+
+- (void)assertSelectedEntryVisible:(XBTabBarView *)bar {
+    [bar layoutIfNeeded];
+    UIScrollView *scroll = [bar valueForKey:@"buttonScrollView"];
+    UIView *button = [bar valueForKey:@"buttons"][bar.selectedIndex];
+    CGRect target = [button convertRect:button.bounds toView:scroll];
+    XCTAssertTrue(CGRectContainsRect(CGRectInset(scroll.bounds, -0.5, -0.5), target),
+                  @"viewport=%@ target=%@ content=%@", NSStringFromCGRect(scroll.bounds),
+                  NSStringFromCGRect(target), NSStringFromCGSize(scroll.contentSize));
+}
+
+- (void)testVerticalReorderAndRowHeightChangeRevealSelectedEntry {
+    XBTabBarView *bar = [XBTabBarView new];
+    NSMutableArray *items = [NSMutableArray array];
+    for (NSUInteger i = 0; i < 7; i++) [items addObject:[self page:[@(i) stringValue]]];
+    [bar setItems:items]; bar.vertical = YES; bar.frame = CGRectMake(0, 0, 56, 148);
+    [bar layoutIfNeeded];
+    XBTabBarItem *selected = items.firstObject;
+    [items removeObjectAtIndex:0]; [items addObject:selected];
+    [bar setItems:items];
+    XCTAssertEqual(bar.selectedIndex, 6u);
+    [self assertSelectedEntryVisible:bar];
+    XBTabBarAppearance *appearance = bar.appearance;
+    appearance.floatingItemHeight = 80;
+    bar.appearance = appearance;
+    [self assertSelectedEntryVisible:bar];
+}
+
+- (void)testFloatingBarRequiresOneWholeConfiguredRowAndStaysWithinWidth {
+    XBTabContainerViewController *tabs = [self twoPages];
+    [tabs loadViewIfNeeded];
+    tabs.view.frame = CGRectMake(0, 0, 320, 80);
+    XBTabBarAppearance *appearance = tabs.tabBarAppearance;
+    appearance.floatingItemHeight = 80; appearance.floatingTopClearance = 0; appearance.floatingMargin = 0;
+    tabs.tabBarAppearance = appearance; tabs.tabBarPlacement = XBTabBarPlacementFloatingRight;
+    XCTAssertTrue(tabs.tabBar.hidden);
+    XCTAssertEqual(tabs.tabBarContentInsets.right, 0);
+    tabs.view.frame = CGRectMake(0, 0, 320, 400);
+    appearance.floatingWidth = 500;
+    tabs.tabBarAppearance = appearance;
+    XCTAssertTrue(CGRectGetMinX(tabs.tabBar.frame) >= 0);
+    XCTAssertTrue(CGRectGetMaxX(tabs.tabBar.frame) <= 320);
+}
+
+- (void)testReappearingContainerDiscardsMissedKeyboardFrame {
+    XBTabContainerViewController *tabs = [self twoPages];
+    [tabs loadViewIfNeeded];
+    [tabs setValue:[NSValue valueWithCGRect:CGRectMake(0, 300, 320, 300)] forKey:@"keyboardFrameInScreen"];
+    [tabs viewWillAppear:NO];
+    XCTAssertTrue(CGRectIsNull([[tabs valueForKey:@"keyboardFrameInScreen"] CGRectValue]));
+    [tabs viewDidAppear:NO];
+}
+
+- (void)testVerticalLayoutPreservesButtonIdentityAndEntryState {
+    XBTabBarView *bar = [XBTabBarView new];
+    [bar setItems:@[[self page:@"a"], [self page:@"b"]]];
+    [bar setBadgeValue:@"12" forIdentifier:@"b"];
+    bar.selectedIndex = 1;
+    NSArray *buttons = [[bar valueForKey:@"buttons"] copy];
+    bar.vertical = YES;
+    bar.frame = CGRectMake(0, 0, 56, 104);
+    [bar layoutIfNeeded];
+    XCTAssertEqualObjects(buttons, [bar valueForKey:@"buttons"]);
+    XCTAssertEqual(bar.selectedIndex, 1u);
+    XCTAssertEqualObjects([bar itemForIdentifier:@"b"].badgeValue, @"12");
+    UIControl *button = buttons.firstObject;
+    XCTAssertTrue(button.bounds.size.height >= 44);
+    XCTAssertTrue(button.bounds.size.width >= 44);
+    XCTAssertTrue([[button valueForKey:@"textLabel"] isHidden]);
+    XCTAssertEqualObjects(button.accessibilityLabel, @"a");
+    bar.vertical = NO;
+    [bar layoutIfNeeded];
+    XCTAssertFalse([[button valueForKey:@"textLabel"] isHidden]);
+    XCTAssertEqualObjects(buttons, [bar valueForKey:@"buttons"]);
+}
+
+- (void)testVerticalOverflowKeepsEveryEntryReachable {
+    XBTabBarView *bar = [XBTabBarView new];
+    NSMutableArray *items = [NSMutableArray array];
+    for (NSUInteger index = 0; index < 7; index++) [items addObject:[self page:[@(index) stringValue]]];
+    [bar setItems:items]; bar.vertical = YES;
+    bar.frame = CGRectMake(0, 0, 56, 148);
+    bar.selectedIndex = 6;
+    [bar layoutIfNeeded];
+    UIScrollView *scroll = [bar valueForKey:@"buttonScrollView"];
+    XCTAssertEqual(bar.items.count, 7u);
+    XCTAssertTrue(scroll.scrollEnabled);
+    XCTAssertTrue(scroll.contentSize.height > scroll.bounds.size.height);
+    XCTAssertTrue(scroll.contentOffset.y > 0);
+    XCTAssertNil([bar hitTest:CGPointMake(28, 170) withEvent:nil]);
+}
+
+- (void)testFloatingAppearanceHasValueSemantics {
+    XBTabBarAppearance *original = [XBTabBarAppearance new];
+    original.floatingWidth = 64; original.floatingItemHeight = 48;
+    original.floatingMargin = 16; original.floatingTopClearance = 120;
+    XBTabBarAppearance *copy = [original copy];
+    original.floatingWidth = 90;
+    XCTAssertEqual(copy.floatingWidth, 64);
+    XCTAssertEqual(copy.floatingItemHeight, 48);
+    XCTAssertEqual(copy.floatingMargin, 16);
+    XCTAssertEqual(copy.floatingTopClearance, 120);
+}
+
 - (XBTabBarItem *)page:(NSString *)identifier {
     return [[XBTabBarItem alloc] initWithIdentifier:identifier title:identifier image:[UIImage systemImageNamed:@"house"] selectedImage:nil];
 }
@@ -73,7 +226,9 @@
     XCTAssertFalse([bar itemForIdentifier:@"a"].isEnabled);
 }
 - (void)testAppearanceReadsAndWritesAreIsolatedAndApplyInsets {
-    XBTabContainerViewController *tabs = [self twoPages]; [tabs loadViewIfNeeded];
+    XBTabContainerViewController *tabs = [self twoPages];
+    tabs.tabBarPlacement = XBTabBarPlacementBottom;
+    [tabs loadViewIfNeeded];
     XBTabBarAppearance *style = tabs.tabBarAppearance; style.contentHeight = 70;
     XCTAssertEqual(tabs.tabBarAppearance.contentHeight, 49);
     XCTAssertEqual(tabs.tabBar.appearance.contentHeight, 49);
@@ -108,6 +263,7 @@
 }
 - (void)testDecodedContainerHasWorkingSelectionAndInsets {
     XBTabContainerViewController *tabs = [self decodeBaseObject:[UIViewController new] asClass:XBTabContainerViewController.class];
+    tabs.tabBarPlacement = XBTabBarPlacementBottom;
     XCTAssertEqual(tabs.selectedIndex, NSNotFound);
     tabs.viewControllers = @[[UIViewController new], [UIViewController new]];
     tabs.selectedIndex = 1; [tabs loadViewIfNeeded];
@@ -158,6 +314,7 @@
 }
 - (void)testRemovingNavigationRestoresDelegateAndOriginalInsets {
     XBTabContainerViewController *tabs = [XBTabContainerViewController new];
+    tabs.tabBarPlacement = XBTabBarPlacementBottom;
     UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:[UIViewController new]];
     XBSelectionProbe *original = [XBSelectionProbe new]; navigation.delegate = original;
     navigation.additionalSafeAreaInsets = UIEdgeInsetsMake(1, 2, 7, 4);
@@ -183,6 +340,7 @@
 }
 - (void)testNavigationPushAndPopRestoreBarAndInsets {
     XBTabContainerViewController *tabs = [XBTabContainerViewController new];
+    tabs.tabBarPlacement = XBTabBarPlacementBottom;
     UIViewController *root = [UIViewController new];
     UINavigationController *navigation = [[UINavigationController alloc] initWithRootViewController:root];
     tabs.viewControllers = @[navigation]; [tabs loadViewIfNeeded];

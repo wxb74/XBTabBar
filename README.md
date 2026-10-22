@@ -2,7 +2,7 @@
 
 Objective-C 多入口底栏组件，最低 iOS 15，依赖 UIKit、Masonry。支持超过五个入口全部直显、独立导航栈、凸起按钮、Action、角标、六种图文布局及点击动画。
 
-组件版本 **0.1.0**，Demo 版本 **0.2.0**。组件不依赖项目 PCH、主题、权限或网络逻辑；Demo 使用 CocoaPods 安装 XBTabBar 和 Masonry，不再包含手工复制的第三方源码。
+已发布组件版本 **0.1.0**，Demo 版本 **0.2.0**。`main` 分支新增 iPhone Duo 自动侧栏适配，尚未包含在 `v0.1.0` 标签中。组件不依赖项目 PCH、主题、权限或网络逻辑；Demo 使用 CocoaPods 安装 XBTabBar 和 Masonry，不再包含手工复制的第三方源码。
 
 ## 预览
 
@@ -24,7 +24,15 @@ end
 
 执行 `pod install`，随后打开生成的 `.xcworkspace`。Masonry 由 `XBTabBar.podspec` 声明并自动安装，无需复制 Masonry 源码。
 
-本版本通过 GitHub tag 提供安装，尚未发布到 CocoaPods trunk。开发仓库中的本地组件可使用 `pod 'XBTabBar', :path => '.'`，Demo 已采用此方式。
+获取本次 iPhone Duo 适配时，使用 `main` 分支替换上面的 tag 配置：
+
+```ruby
+pod 'XBTabBar', :git => 'https://github.com/wxb74/XBTabBar.git', :branch => 'main'
+```
+
+已有安装执行 `pod update XBTabBar`，并提交应用的 `Podfile.lock` 锁定实际提交。`v0.1.0` 保留原发布内容。
+
+本组件通过 GitHub 提供安装，尚未发布到 CocoaPods trunk。开发仓库中的本地组件可使用 `pod 'XBTabBar', :path => '.'`，Demo 已采用此方式。
 
 ### 初始化
 
@@ -51,6 +59,25 @@ self.window.rootViewController = tabs;
 单项配置查询和外观读取均返回副本，修改后通过 `updateItem:` 或重新赋值应用。所有 UI 和配置更新在主线程执行。
 
 完整能力、委托回调、角标、布局和导航接入说明见 [组件文档](XBTabBar/README.md)。Swift 接入可参考 [Swift 示例](Demo/SwiftInteropCheck.swift)。
+
+## iPhone Duo 自适应（main）
+
+容器默认使用 `XBTabBarPlacementAutomatic`。使用 iOS 27.1+ SDK 构建并在 iOS 27.1+ 运行时，根据系统 `verticalBarEdge` 在底部横栏、物理左侧或右侧纵向胶囊之间切换；旧 SDK / 系统以及系统未建议侧栏时使用底栏。位置不按机型名称、屏幕宽度或 RTL 推测。
+
+```objc
+// 默认即为 Automatic，不需要在窗口变化时重建页面或入口。
+tabs.tabBarPlacement = XBTabBarPlacementAutomatic;
+XBTabBarAppearance *appearance = tabs.tabBarAppearance;
+appearance.floatingWidth = 56;
+appearance.floatingItemHeight = 44;
+appearance.floatingMargin = 12;
+appearance.floatingTopClearance = 112;
+tabs.tabBarAppearance = appearance;
+```
+
+侧栏避开系统活跃的遮挡 / 折叠区域及相交的停靠键盘，空间不足时滚动入口；连一整项都无法容纳时暂时隐藏。纵向按当前状态显示图标，缺图回退文字，完整标题保留供 VoiceOver 读取。横竖切换保留页面、导航栈、按钮和入口样式。
+
+业务内容约束到子页面的 `safeAreaLayoutGuide`，容器负责追加并撤回自己的避让，不要重复叠加栏宽或栏高。挂窗完成布局后可读取 `resolvedTabBarPlacement` 和 `tabBarContentInsets`。显式 `Bottom` / `FloatingLeft` / `FloatingRight` 可覆盖自动位置；独立使用 `XBTabBarView` 时，宿主自行管理位置、安全区和 `vertical`。
 
 ## 运行
 
@@ -105,13 +132,13 @@ RTL 是从右向左布局，常用于阿拉伯语等语言的适配。底栏视�
 - `XBTabBar/`：组件源码和接入说明。
 - `XBTabBar.podspec`：组件、公开头文件和 Masonry 依赖声明。
 - `Podfile` / `Podfile.lock`：Demo 的 CocoaPods 接入及版本锁定。
-- `Tests/XBTabBarTests.m`：原组件的 13 项回归测试。
+- `Tests/XBTabBarTests.m`：组件的 22 项回归测试（包含 9 项 Duo / 纵向布局检查）。
 - `Tests/XBDemoCatalogTests.m`：目录和扩展 Demo 的 7 项集成检查。
 - `Documentation/`：目录及示例页运行截图。
 
 ## 验证
 
-在 Xcode 按 ⌘U 执行 20 项测试。验证记录见 [Verification.md](Verification.md)，截图索引见 [Documentation/README.md](Documentation/README.md)。
+在 Xcode 按 ⌘U 执行 29 项测试。验证记录见 [Verification.md](Verification.md)，截图索引见 [Documentation/README.md](Documentation/README.md)。
 
 ```sh
 xcodebuild -workspace XBTabBarDemo.xcworkspace -scheme XBTabBarDemo \
@@ -124,7 +151,7 @@ xcodebuild -workspace XBTabBarDemo.xcworkspace -scheme XBTabBarDemo \
   -derivedDataPath /tmp/XBTabBarDemo-build CODE_SIGNING_ALLOWED=NO test
 ```
 
-交互返回取消、iPad / 旋转 / 极窄窗口以及系统辅助功能运行时切换，仍需实际体验检查。iOS 15 已作为部署目标构建，当前未在 iOS 15 运行。
+已在 iPhone Duo / iOS 27.1 和 iPhone 18 Pro / iOS 27.0 模拟器各通过 29 项测试；完整折叠姿态、Split View、键盘 / 保留区域变化、交互返回取消及辅助功能运行时切换仍需实际体验检查。iOS 15 已作为部署目标构建，当前未在 iOS 15 运行。
 
 组件说明见 [XBTabBar/README.md](XBTabBar/README.md)，版本记录见 [CHANGELOG.md](CHANGELOG.md)。XBTabBar 和 Demo 使用 MIT 许可，Masonry 的原始许可由 CocoaPods 随依赖安装提供。
 

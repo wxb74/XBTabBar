@@ -1,5 +1,8 @@
 #import "XBTabContainerViewController.h"
 #import <Masonry/Masonry.h>
+#if __has_include(<UIKit/UIVerticalBarEdge.h>)
+#import <UIKit/UIVerticalBarEdge.h>
+#endif
 
 /// 区分容器自身的展示阶段，避免切 Tab 时给不可见页面发送出现事件或重复启动定时器。
 typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
@@ -78,10 +81,13 @@ typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
 /// 仅挂载当前一级页面的视图；其它导航仍为子控制器，但不占用可见视图层级。
 @property (nonatomic, strong) UIView *contentView;
 @property (nonatomic, strong, readwrite) XBTabBarView *tabBar;
-/// 底部栏总高度包含 Home Indicator 安全区域，横竖屏切换时更新同一约束。
-@property (nonatomic, strong) MASConstraint *tabBarHeightConstraint;
-/// 记录接管前的附加安全区域，隐藏栏或移除页面时恢复，不累计重复增加49点。
-@property (nonatomic, strong) NSMapTable<UIViewController *, NSValue *> *originalInsets;
+/// 已解析的物理栏位置与当前页面的额外避让。
+@property (nonatomic, assign, readwrite) XBTabBarPlacement resolvedTabBarPlacement;
+@property (nonatomic, assign, readwrite) UIEdgeInsets tabBarContentInsets;
+@property (nonatomic, strong) NSMapTable<UIViewController *, NSValue *> *managedInsets;
+@property (nonatomic, assign) BOOL updatingBarLayout;
+@property (nonatomic, assign) BOOL animatingBarVisibility;
+@property (nonatomic, assign) CGRect keyboardFrameInScreen;
 /// 容器当前生命周期阶段，仅当前显示的一级页面参与转发。
 @property (nonatomic, assign) XBTabContainerAppearancePhase appearancePhase;
 /// 等待容器 didAppear/didDisappear 收尾的页面；切换选中页前先结束其事件对。
@@ -119,10 +125,11 @@ typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
 
 /// 代码和 Storyboard/XIB 使用相同的初始状态；入口配置仍由接入方提供。
 - (void)xb_initializeContainer {
-    if (_originalInsets == nil) {
+    if (_managedInsets == nil) {
         _viewControllers = @[];
+        _keyboardFrameInScreen = CGRectNull;
         _selectedIndex = NSNotFound;
-        _originalInsets = [NSMapTable weakToStrongObjectsMapTable];
+        _managedInsets = [NSMapTable weakToStrongObjectsMapTable];
         _navigationDelegates = [NSMapTable weakToStrongObjectsMapTable];
         _tabBarAppearance = [XBTabBarAppearance new];
         _configuredItems = @[];
@@ -130,7 +137,7 @@ typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
     }
 }
 
-/// 容器只管理内容宿主和底部宿主，按钮样式及权限判断留给业务层。
+/// 内容背景铺满宿主，交互内容通过安全区避让栏；这里不裁剪业务页或重建导航栈。
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.contentView = [UIView new];
@@ -143,17 +150,24 @@ typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
     };
     [self.view addSubview:self.contentView];
     [self.view addSubview:_tabBar];
+    for (NSNotificationName name in @[UIKeyboardWillChangeFrameNotification, UIKeyboardDidChangeFrameNotification, UIKeyboardWillHideNotification, UIKeyboardDidHideNotification]) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardFrameDidChange:) name:name object:nil];
+    }
     [self.contentView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.edges.equalTo(self.view);
     }];
-    [_tabBar mas_makeConstraints:^(MASConstraintMaker *make) {
-        make.left.right.bottom.equalTo(self.view);
-        self.tabBarHeightConstraint = make.height.mas_equalTo(_tabBarAppearance.contentHeight);
-    }];
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 270100
+    if (@available(iOS 27.1, *)) {
+        [self registerForTraitChanges:UITraitCollection.systemTraitsAffectingVerticalBarEdge
+                         withHandler:^(XBTabContainerViewController *environment, UITraitCollection *previous) {
+            [environment.view setNeedsLayout];
+        }];
+    }
+#endif
     [self displayViewController:self.selectedViewController replacing:nil];
 }
 
-/// 允许先构建页面再访问底部宿主，避免外部提前配置时得到空宿主。
+/// 访问按钮栏会加载视图；入口可在此之前通过 setViewControllers:tabBarItems: 配置。
 - (XBTabBarView *)tabBar {
     [self loadViewIfNeeded];
     return _tabBar;
@@ -219,7 +233,6 @@ typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
     }
     for (UIViewController *controller in controllers) {
         if (controller.parentViewController != self) {
-            [self.originalInsets setObject:[NSValue valueWithUIEdgeInsets:controller.additionalSafeAreaInsets] forKey:controller];
             [self addChildViewController:controller];
             if ([controller isKindOfClass:UINavigationController.class]) {
                 UINavigationController *navigation = (UINavigationController *)controller;
@@ -261,8 +274,8 @@ typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
                 }
                 [self.navigationDelegates removeObjectForKey:navigation];
             }
-            controller.additionalSafeAreaInsets = [[self.originalInsets objectForKey:controller] UIEdgeInsetsValue];
-            [self.originalInsets removeObjectForKey:controller];
+            [self applyManagedInsets:UIEdgeInsetsZero toController:controller];
+            [self.managedInsets removeObjectForKey:controller];
             [controller.viewIfLoaded removeFromSuperview];
             [controller removeFromParentViewController];
         }
@@ -368,6 +381,9 @@ typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
 /// 出现阶段先登记待收尾页面，再交给业务页执行 viewWillAppear。
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
+    // 离窗期间可能错过键盘收起通知；重新展示时以当前窗口的键盘 guide 为准。
+    self.keyboardFrameInScreen = CGRectNull;
+    [self.view setNeedsLayout];
     [self finishPendingAppearanceTransition];
     self.appearancePhase = XBTabContainerAppearancePhaseAppearing;
     self.pendingAppearanceController = self.selectedViewController;
@@ -417,29 +433,24 @@ typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
     return NO;
 }
 
-/// 一起更新栏位移和内容安全区域，详情页不会残留底部49点空白。
+/// 隐藏状态和附加避让同步更新，详情页不残留底部或侧边的栏占位。
 - (void)setTabBarHidden:(BOOL)hidden animated:(BOOL)animated {
     _tabBarHidden = hidden;
     if (!self.isViewLoaded) {
         return;
     }
     void (^changes)(void) = ^{
-        self->_tabBar.transform = hidden ? CGAffineTransformMakeTranslation(0, CGRectGetHeight(self->_tabBar.bounds)) : CGAffineTransformIdentity;
-        UIViewController *controller = self.selectedViewController;
-        if (controller) {
-            UIEdgeInsets insets = controller.additionalSafeAreaInsets;
-            insets.bottom = [[self.originalInsets objectForKey:controller] UIEdgeInsetsValue].bottom + (hidden ? 0 : self->_tabBarAppearance.contentHeight);
-            controller.additionalSafeAreaInsets = insets;
-        }
+        [self updateTabBarLayout];
     };
     _tabBar.hidden = NO;
-    if (animated) {
-        [UIView animateWithDuration:0.25 animations:changes completion:^(BOOL finished) {
-            self->_tabBar.hidden = self.tabBarHidden;
+    self.animatingBarVisibility = animated && !UIAccessibilityIsReduceMotionEnabled();
+    if (self.animatingBarVisibility) {
+        [UIView animateWithDuration:0.25 delay:0 options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction animations:changes completion:^(BOOL finished) {
+            self.animatingBarVisibility = NO;
+            [self updateTabBarLayout];
         }];
     } else {
         changes();
-        _tabBar.hidden = hidden;
     }
 }
 
@@ -477,13 +488,147 @@ typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
     }
 }
 
-/// 安全区域变化只更新宿主高度，导航内容的额外避让始终为按钮区49点。
+/// 系统安全区变化时重新分配底部或侧边避让，业务页面无需重复计算栏尺寸。
 - (void)viewSafeAreaInsetsDidChange {
     [super viewSafeAreaInsetsDidChange];
-    [self.tabBarHeightConstraint setOffset:_tabBarAppearance.contentHeight + self.view.safeAreaInsets.bottom];
+    [self updateTabBarLayout];
 }
 
-/// 外观变化只更新按钮与安全区，不重建导航栈；高度由容器负责统一，避免宿主与按钮区不一致。
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
+    [self updateTabBarLayout];
+}
+
+- (void)setTabBarPlacement:(XBTabBarPlacement)tabBarPlacement {
+    if (_tabBarPlacement == tabBarPlacement) return;
+    _tabBarPlacement = tabBarPlacement;
+    if (self.isViewLoaded) [self updateTabBarLayout];
+}
+
+/// 键盘 guide 的最终值可能晚于页面布局回调，帧通知负责驱动这次布局更新。
+- (void)keyboardFrameDidChange:(NSNotification *)notification {
+    if (!self.viewIfLoaded.window) return;
+    NSValue *value = notification.userInfo[UIKeyboardFrameEndUserInfoKey];
+    self.keyboardFrameInScreen = value ? value.CGRectValue : CGRectNull;
+    NSTimeInterval duration = [notification.userInfo[UIKeyboardAnimationDurationUserInfoKey] doubleValue];
+    BOOL startsTransition = [notification.name isEqualToString:UIKeyboardWillChangeFrameNotification] || [notification.name isEqualToString:UIKeyboardWillHideNotification];
+    if (startsTransition && duration > 0 && !UIAccessibilityIsReduceMotionEnabled()) {
+        UIViewAnimationOptions curve = [notification.userInfo[UIKeyboardAnimationCurveUserInfoKey] unsignedIntegerValue] << 16;
+        [UIView animateWithDuration:duration delay:0 options:curve | UIViewAnimationOptionBeginFromCurrentState animations:^{
+            [self updateTabBarLayout];
+            [self->_tabBar layoutIfNeeded];
+        } completion:nil];
+    } else {
+        [self updateTabBarLayout];
+    }
+}
+
+/// 只撤回容器自己上次增加的值，保留业务在运行中调整的其它附加边距。
+- (void)applyManagedInsets:(UIEdgeInsets)managed toController:(UIViewController *)controller {
+    if (!controller) return;
+    UIEdgeInsets previous = [[self.managedInsets objectForKey:controller] UIEdgeInsetsValue];
+    UIEdgeInsets insets = controller.additionalSafeAreaInsets;
+    insets.left += managed.left - previous.left;
+    insets.right += managed.right - previous.right;
+    insets.bottom += managed.bottom - previous.bottom;
+    [self.managedInsets setObject:[NSValue valueWithUIEdgeInsets:managed] forKey:controller];
+    if (!UIEdgeInsetsEqualToEdgeInsets(insets, controller.additionalSafeAreaInsets)) controller.additionalSafeAreaInsets = insets;
+}
+
+/// 在侧边列中切除相机和当前活跃折叠区域；不以屏幕中点猜测铰链。
+- (CGRect)availableFloatingColumn:(CGRect)column {
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 270100
+    if (@available(iOS 27.1, *)) {
+        NSMutableArray<NSValue *> *segments = [NSMutableArray arrayWithObject:[NSValue valueWithCGRect:column]];
+        NSArray *regions = [[self.view reservedRegionsOfKind:UIViewReservedRegionKind.occlusionRegionKind]
+            arrayByAddingObjectsFromArray:[self.view reservedRegionsOfKind:UIViewReservedRegionKind.divisionRegionKind]];
+        for (UIViewReservedRegion *region in regions) {
+            if (!region.active) continue;
+            NSMutableArray *next = [NSMutableArray array];
+            for (NSValue *value in segments) {
+                CGRect segment = value.CGRectValue, intersection = CGRectIntersection(segment, region.frame);
+                if (CGRectIsNull(intersection) || CGRectIsEmpty(intersection)) { [next addObject:value]; continue; }
+                CGFloat topHeight = CGRectGetMinY(intersection) - CGRectGetMinY(segment);
+                CGFloat bottomY = CGRectGetMaxY(intersection);
+                if (topHeight > 0) [next addObject:[NSValue valueWithCGRect:CGRectMake(segment.origin.x, segment.origin.y, segment.size.width, topHeight)]];
+                if (bottomY < CGRectGetMaxY(segment)) [next addObject:[NSValue valueWithCGRect:CGRectMake(segment.origin.x, bottomY, segment.size.width, CGRectGetMaxY(segment) - bottomY)]];
+            }
+            segments = next;
+        }
+        // 至少容纳一整项和上下各8pt内边距；使用接入方配置的行高，不压缩点击区域。
+        CGFloat minimumHeight = MAX(44, _tabBarAppearance.floatingItemHeight) + 16;
+        for (NSValue *value in segments.reverseObjectEnumerator) {
+            if (value.CGRectValue.size.height >= minimumHeight) return value.CGRectValue;
+        }
+        return CGRectZero;
+    }
+#endif
+    return column;
+}
+
+/// 几何变化只改栏和附加安全区，不重建页面、导航栈或按钮。
+- (void)updateTabBarLayout {
+    if (self.updatingBarLayout || !_tabBar || !self.contentView) return;
+    self.updatingBarLayout = YES;
+    XBTabBarPlacement placement = self.tabBarPlacement == XBTabBarPlacementAutomatic ? XBTabBarPlacementForTraits(self.traitCollection) : self.tabBarPlacement;
+    self.resolvedTabBarPlacement = placement;
+    BOOL vertical = placement == XBTabBarPlacementFloatingLeft || placement == XBTabBarPlacementFloatingRight;
+    _tabBar.vertical = vertical;
+    CGRect bounds = self.view.bounds;
+    UIEdgeInsets safe = self.view.safeAreaInsets, managed = UIEdgeInsetsZero;
+    CGFloat minimumFloatingHeight = MAX(44, _tabBarAppearance.floatingItemHeight) + 16;
+    CGRect frame;
+    if (vertical) {
+        CGFloat width = MAX(44, _tabBarAppearance.floatingWidth), margin = MAX(0, _tabBarAppearance.floatingMargin);
+        UIEdgeInsets dockingInsets = safe;
+        // 系统给垂直栏预留的侧边安全区就是栏的宿主，不再把胶囊放到这条区域内侧。
+        // 仅复用系统指定的那一侧；强制布局测试仍保留其它设备真实的侧边物理避让。
+        XBTabBarPlacement systemPlacement = XBTabBarPlacementForTraits(self.traitCollection);
+        if (placement == systemPlacement) {
+            if (placement == XBTabBarPlacementFloatingLeft) dockingInsets.left = 0;
+            else dockingInsets.right = 0;
+        }
+        CGRect available = UIEdgeInsetsInsetRect(bounds, dockingInsets);
+        // 极窄的分屏不能让胶囊越出宿主；不足44pt时由下方可见性判断暂时隐藏。
+        width = MIN(width, MAX(0, CGRectGetWidth(available) - margin * 2));
+        CGFloat top = MAX(CGRectGetMinY(available) + margin, CGRectGetMinY(bounds) + MAX(0, _tabBarAppearance.floatingTopClearance));
+        CGFloat x = placement == XBTabBarPlacementFloatingLeft ? CGRectGetMinX(available) + margin : CGRectGetMaxX(available) - margin - width;
+        CGRect keyboard = self.view.keyboardLayoutGuide.layoutFrame;
+        if (!CGRectIsNull(self.keyboardFrameInScreen) && self.view.window) {
+            UIScreen *screen = self.view.window.windowScene.screen ?: self.view.window.screen;
+            keyboard = [self.view convertRect:self.keyboardFrameInScreen fromCoordinateSpace:screen.coordinateSpace];
+        }
+        // 只避让与本窗口侧栏相交的停靠键盘，浮动键盘不把整条栏推走。
+        if (!CGRectIsEmpty(keyboard) && CGRectGetMaxY(keyboard) >= CGRectGetMaxY(bounds) - 1 &&
+            CGRectGetMaxX(keyboard) > x && CGRectGetMinX(keyboard) < x + width) {
+            available.size.height = MAX(0, MIN(CGRectGetMaxY(available), CGRectGetMinY(keyboard)) - available.origin.y);
+        }
+        CGRect column = CGRectMake(x, top, width, MAX(0, CGRectGetMaxY(available) - margin - top));
+        column = [self availableFloatingColumn:column];
+        CGFloat height = MIN(column.size.height, self.configuredItems.count * MAX(44, _tabBarAppearance.floatingItemHeight) + 16);
+        frame = CGRectMake(column.origin.x, CGRectGetMaxY(column) - height, column.size.width, height);
+        if (!self.tabBarHidden && height >= minimumFloatingHeight && width >= 44) {
+            if (placement == XBTabBarPlacementFloatingLeft) managed.left = MAX(0, CGRectGetMaxX(frame) + margin - CGRectGetMinX(bounds) - safe.left);
+            else managed.right = MAX(0, CGRectGetMaxX(bounds) - CGRectGetMinX(frame) + margin - safe.right);
+        }
+    } else {
+        CGFloat height = _tabBarAppearance.contentHeight + safe.bottom;
+        frame = CGRectMake(CGRectGetMinX(bounds), CGRectGetMaxY(bounds) - height, bounds.size.width, height);
+        if (!self.tabBarHidden && self.configuredItems.count) managed.bottom = _tabBarAppearance.contentHeight;
+    }
+    _tabBar.transform = CGAffineTransformIdentity;
+    _tabBar.frame = frame;
+    if (self.tabBarHidden) {
+        _tabBar.transform = vertical ? CGAffineTransformMakeTranslation((placement == XBTabBarPlacementFloatingLeft ? -1 : 1) * (frame.size.width + _tabBarAppearance.floatingMargin), 0) : CGAffineTransformMakeTranslation(0, frame.size.height);
+    }
+    _tabBar.hidden = (self.tabBarHidden && !self.animatingBarVisibility) || self.configuredItems.count == 0 || CGRectIsEmpty(frame) ||
+        (vertical && (frame.size.height < minimumFloatingHeight || frame.size.width < 44));
+    self.tabBarContentInsets = managed;
+    [self applyManagedInsets:managed toController:self.selectedViewController];
+    self.updatingBarLayout = NO;
+}
+
+/// 外观复制后更新栏几何和内容避让，保持已有页面、按钮身份及导航栈。
 - (XBTabBarAppearance *)tabBarAppearance {
     return [_tabBarAppearance copy];
 }
@@ -495,7 +640,6 @@ typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
     }
     if (self.isViewLoaded) {
         self.tabBar.appearance = _tabBarAppearance;
-        [self.tabBarHeightConstraint setOffset:_tabBarAppearance.contentHeight + self.view.safeAreaInsets.bottom];
         [self setTabBarHidden:self.tabBarHidden animated:NO];
     }
 }
@@ -579,14 +723,20 @@ typedef NS_ENUM(NSUInteger, XBTabContainerAppearancePhase) {
 
 /// 容器释放但导航被外部保留时，也恢复原代理及附加避让，不留下指向失效代理的弱引用。
 - (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     for (UINavigationController *navigation in self.navigationDelegates) {
         XBTabNavigationDelegate *proxy = [self.navigationDelegates objectForKey:navigation];
         if (navigation.delegate == proxy) {
             navigation.delegate = proxy.originalDelegate;
         }
     }
-    for (UIViewController *controller in self.originalInsets) {
-        controller.additionalSafeAreaInsets = [[self.originalInsets objectForKey:controller] UIEdgeInsetsValue];
+    for (UIViewController *controller in self.managedInsets) {
+        UIEdgeInsets managed = [[self.managedInsets objectForKey:controller] UIEdgeInsetsValue];
+        UIEdgeInsets insets = controller.additionalSafeAreaInsets;
+        insets.left -= managed.left;
+        insets.right -= managed.right;
+        insets.bottom -= managed.bottom;
+        controller.additionalSafeAreaInsets = insets;
     }
 }
 

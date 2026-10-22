@@ -3,10 +3,31 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// 可单独使用的横向按钮栏；仅依赖 UIKit/Masonry，不切控制器、不请求权限、不识别业务通知。
-/// 所有配置和 UI 更新均在主线程调用。按钮区位于顶部，底部剩余空间仅绘制背景。
-/// 背景支持图片和普通毛玻璃；图文排列与单项覆盖见 XBTabBarAppearance / XBTabBarItem.style。
+/// 整条栏的位置；与 XBTabBarItemLayout（单个按钮的图文排列）用途不同。
+typedef NS_ENUM(NSUInteger, XBTabBarPlacement) {
+    XBTabBarPlacementAutomatic,     ///< 容器读取系统建议，推荐默认值。
+    XBTabBarPlacementBottom,        ///< 底部横栏，按钮区下方包含底部安全区背景。
+    XBTabBarPlacementFloatingLeft,  ///< 物理左下侧的纵向胶囊，不随 RTL 镜像。
+    XBTabBarPlacementFloatingRight, ///< 物理右下侧的纵向胶囊，不随 RTL 镜像。
+};
+
+/// iOS 27.1 根据系统 verticalBarEdge 决定物理侧边；旧系统、普通设备返回 Bottom。
+FOUNDATION_EXPORT XBTabBarPlacement XBTabBarPlacementForTraits(UITraitCollection *traits);
+
+/**
+ 只负责按钮展示和点击的 UIView。需要页面切换、Duo 自动位置、安全区/键盘/折叠区域避让时，
+ 优先使用 XBTabContainerViewController；其 tabBar 已管理好这些职责。
+
+ 独立接入时：设置 items/appearance，给视图设置约束或 frame，并在 itemTapHandler 中处理点击；
+ 宿主自行决定 vertical、栏尺寸、系统区域避让及页面安全区。确认页面选择后设置 selectedIndex，
+ 再调用 animateSelectionAtIndex:reselected:；Action 只执行操作，不设置为选中项。
+ 所有配置在主线程调用。配置按副本保存，修改后通过对应 setter/updateItem: 提交。
+ */
 @interface XBTabBarView : UIView
+/// 只控制排列方向，不自动移动视图。由容器托管时不要自行设置。
+/// 纵向按当前状态显示图标，无可显示图标时回退标题，完整标题始终供 VoiceOver 读取。
+/// 空间不足时纵向滚动，所有入口仍可访问；切换不会重建按钮或修改 item.style。
+@property (nonatomic, assign, getter=isVertical) BOOL vertical;
 /// 返回包含 item/style 副本的快照；修改快照后通过 updateItem: 应用。
 @property (nonatomic, copy, readonly) NSArray<XBTabBarItem *> *items;
 /// getter/setter 均复制配置；修改后重新赋值，避免内部状态与显示不同步。
@@ -30,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 由容器确认选择后调用；依次采用自定义回调、单项/全局预设，不改变选择或回调点击。
 /// 独立使用按钮栏时，由 itemTapHandler 在业务确认接受点击后主动调用。
 - (void)animateSelectionAtIndex:(NSUInteger)index reselected:(BOOL)reselected;
-/// 越界点击只覆盖实际凸起按钮。独立嵌入时，外层父视图须包含凸起区域且不要裁剪该区域。
+/// 横栏可命中真实凸起按钮；独立嵌入时父视图须包含凸起区域且不裁剪。竖栏仅在胶囊可见范围内命中。
 @end
 
 NS_ASSUME_NONNULL_END

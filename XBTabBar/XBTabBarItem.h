@@ -28,6 +28,7 @@ typedef NS_ENUM(NSUInteger, XBTabBarItemAnimation) {
 
 /// 一个按钮的完整样式；全局外观继承此类，单项可通过 style 使用独立副本。
 /// 不做逐字段的隐式合并；建议复制当前 tabBarAppearance 再修改需要覆盖的字段。
+/// 竖栏自动选择仅图/仅文，并使用对称5pt内容边距；layout/contentInsets 的原配置保留供横栏恢复。
 @interface XBTabBarItemStyle : NSObject <NSCopying>
 @property (nonatomic, assign) XBTabBarItemLayout layout;
 /// 默认 None；单项与全局采用相同规则。自定义 selectionAnimation 回调存在时替代预设，不叠加。
@@ -40,6 +41,7 @@ typedef NS_ENUM(NSUInteger, XBTabBarItemAnimation) {
 /// 内容边距默认 top=5、left/right=5、bottom=0，不改变等宽按钮的点击范围。
 @property (nonatomic, assign) UIEdgeInsets contentInsets;
 /// 实际按钮尺寸；每个0分量沿用槽位宽度/栏按钮区高度。宽度最多为槽位宽，避免覆盖相邻入口。
+/// 竖栏使用完整槽位作为点击区域，不应用 buttonSize/raisedHeight，保留配置供横栏恢复。
 @property (nonatomic, assign) CGSize buttonSize;
 /// 按钮底边相对槽位底边向上抬升的距离，默认0；大尺寸按钮自身也会向上突出，不增加栏高。
 @property (nonatomic, assign) CGFloat raisedHeight;
@@ -68,10 +70,13 @@ typedef NS_ENUM(NSUInteger, XBTabBarItemAnimation) {
 /// 一个入口的展示配置，不持有控制器、权限或网络请求。identifier 用于重排后恢复选择。
 /// 配置交给按钮栏时会复制；后续修改请通过 updateItem: 重新应用。
 @interface XBTabBarItem : NSObject <NSCopying>
+/// 稳定且在同一栏内唯一，例如 home/profile；不要使用数组下标、会变化的标题或未读数量。
 @property (nonatomic, copy, readonly) NSString *identifier;
 /// 创建后不可改变类型；需要调整入口结构时使用容器的 setViewControllers:tabBarItems:。
 @property (nonatomic, assign, readonly) XBTabBarItemKind kind;
 @property (nonatomic, copy) NSString *title;
+/// 普通状态的图标；不要只配置 selectedImage，否则未选中时竖栏会回退为标题。
+/// 使用模板图时颜色来自 normalColor/selectedColor；AlwaysOriginal 保留图片原色。
 @property (nonatomic, strong, nullable) UIImage *image;
 /// 未提供选中图时沿用 image；图片本身的 renderingMode 决定是否接受主题 tint。
 @property (nonatomic, strong, nullable) UIImage *selectedImage;
@@ -92,7 +97,19 @@ typedef NS_ENUM(NSUInteger, XBTabBarItemAnimation) {
 
 /// 按钮栏统一外观。默认不含任何项目图片、字体名称、颜色 Token 或屏幕尺寸判断。
 /// 修改后重新赋给 appearance 即可更新已有按钮，无需重建控制器。
+/// 容器接入示例：XBTabBarAppearance *style = tabs.tabBarAppearance;
+/// style.selectedColor = UIColor.systemRedColor; tabs.tabBarAppearance = style;
+/// 设置 item.style 后该入口使用完整单项样式，后续全局按钮样式变化不会自动合并到该入口。
 @interface XBTabBarAppearance : XBTabBarItemStyle
+/// 竖栏宽度默认56，至少44；容器还会限制其不超出可用宽度，不足44时暂时隐藏。
+@property (nonatomic, assign) CGFloat floatingWidth;
+/// 竖栏每项高度默认44，至少44。竖栏上下各有8pt内边距，至少能完整显示一项才会出现。
+@property (nonatomic, assign) CGFloat floatingItemHeight;
+/// 胶囊与可用边缘的间距，默认12，负值按0处理；不需要接入方再加系统安全区。
+@property (nonatomic, assign) CGFloat floatingMargin;
+/// 给宿主侧边导航操作预留的顶部空间，默认112，可按宿主导航调整；不是相机/铰链的尺寸。
+/// 容器仍会查询系统保留区域，并在键盘或短窗口下缩小视口、滚动入口。
+@property (nonatomic, assign) CGFloat floatingTopClearance;
 /// 只表示按钮区高度，不含底部 Home Indicator；默认49，容器负责补上安全区。
 @property (nonatomic, assign) CGFloat contentHeight;
 /// 无模糊时的底色，也是系统开启“减少透明度”时的实色回退。
@@ -106,7 +123,7 @@ typedef NS_ENUM(NSUInteger, XBTabBarItemAnimation) {
 /// 位于背景图/毛玻璃之上、按钮之下，默认透明；建议使用带透明度的颜色。
 @property (nonatomic, strong, nullable) UIColor *backgroundOverlayColor;
 @property (nonatomic, strong) UIColor *separatorColor;
-/// 顶部分割线默认0.5，设置0隐藏，不需要业务额外添加线视图。
+/// 横栏顶部分割线默认0.5，设置0隐藏；竖栏不显示此分割线。
 @property (nonatomic, assign) CGFloat separatorHeight;
 @end
 

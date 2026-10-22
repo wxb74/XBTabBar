@@ -82,6 +82,10 @@
     self = [super init];
     if (self) {
         _contentHeight = 49;
+        _floatingWidth = 56;
+        _floatingItemHeight = 44;
+        _floatingMargin = 12;
+        _floatingTopClearance = 112;
         _backgroundColor = UIColor.systemBackgroundColor;
         _barBackgroundImageContentMode = UIViewContentModeScaleAspectFill;
         _separatorColor = UIColor.separatorColor;
@@ -93,6 +97,10 @@
 - (id)copyWithZone:(NSZone *)zone {
     XBTabBarAppearance *appearance = [super copyWithZone:zone];
     appearance.contentHeight = self.contentHeight;
+    appearance.floatingWidth = self.floatingWidth;
+    appearance.floatingItemHeight = self.floatingItemHeight;
+    appearance.floatingMargin = self.floatingMargin;
+    appearance.floatingTopClearance = self.floatingTopClearance;
     appearance.backgroundColor = self.backgroundColor;
     appearance.backgroundImage = self.backgroundImage;
     appearance.barBackgroundImageContentMode = self.barBackgroundImageContentMode;

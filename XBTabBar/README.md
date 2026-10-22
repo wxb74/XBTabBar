@@ -1,11 +1,19 @@
 # XBTabBar
 
-Objective-C 多入口组件，版本 `0.1.0`，最低 iOS 15，仅依赖 UIKit、Masonry。
+Objective-C 多入口组件，已发布版本 `0.1.0`，最低 iOS 15，仅依赖 UIKit、Masonry。`main` 分支包含新增的 iPhone Duo 适配。
 推荐通过 CocoaPods 从 GitHub tag 安装：
 
 ```ruby
 pod 'XBTabBar', :git => 'https://github.com/wxb74/XBTabBar.git', :tag => 'v0.1.0'
 ```
+
+`v0.1.0` 不包含新增的 Duo 适配；使用当前适配代码时改为：
+
+```ruby
+pod 'XBTabBar', :git => 'https://github.com/wxb74/XBTabBar.git', :branch => 'main'
+```
+
+已有安装执行 `pod update XBTabBar` 更新锁定提交。
 
 执行 `pod install` 后打开 `.xcworkspace`，Masonry 自动作为依赖安装。组件不依赖项目 PCH、主题、权限、网络或其它 TabBar SDK；仍可复制六个 `.h/.m` 文件并自行链接 Masonry。
 
@@ -31,6 +39,27 @@ pod 'XBTabBar', :git => 'https://github.com/wxb74/XBTabBar.git', :tag => 'v0.1.0
 - push/pop 跟随底栏隐藏配置，处理交互返回取消；转发原导航代理并在移除后恢复。
 - 子页面出现/消失事件配对；状态栏、Home Indicator 和方向由当前入口提供。
 - 安全区、窗口尺寸变化、RTL、基础 VoiceOver 选中/禁用状态；按钮栏可脱离容器单独使用。
+
+## iPhone Duo 与纵向侧栏（main）
+
+- `tabBarPlacement` 默认 `XBTabBarPlacementAutomatic`。SDK 与运行系统均为 iOS 27.1+ 时读取 `verticalBarEdge`；旧 SDK / 系统回退底栏。不根据屏幕宽度猜测位置，也不随 RTL 翻转物理侧边。
+- 支持显式 `XBTabBarPlacementBottom`、`XBTabBarPlacementFloatingLeft` 和 `XBTabBarPlacementFloatingRight`；`resolvedTabBarPlacement` 在挂窗布局后表示实际解析位置。
+- `XBTabBarAppearance` 新增 `floatingWidth`（56）、`floatingItemHeight`（44）、`floatingMargin`（12）、`floatingTopClearance`（112）；尺寸单位均为 pt。宽度和行高至少 44；顶部留白用于宿主导航，并非相机或铰链尺寸。
+- 侧栏复用系统预留的侧边安全区，避开系统活跃遮挡 / 折叠区域及相交的停靠键盘。至少容纳一整项和上下各 8pt 内边距才展示；入口较多时可纵向滚动，选择、重排和视口变化后使选中项可见。
+- 侧栏按当前状态显示图标，缺图回退标题，完整标题保留供 VoiceOver 读取。横竖切换不重建页面、导航栈或按钮，不改写原有 item.style；回到底栏后恢复原布局和凸起尺寸。
+- 页面约束到自身 `safeAreaLayoutGuide`，容器只撤回自己追加的边距，保留业务边距。`tabBarContentInsets` 仅供查询，不含系统原始安全区；不要再次叠加此值。隐藏、移除页面及容器释放时撤回组件避让。
+
+```objc
+tabs.tabBarPlacement = XBTabBarPlacementAutomatic;
+XBTabBarAppearance *appearance = tabs.tabBarAppearance;
+appearance.floatingWidth = 56;
+appearance.floatingItemHeight = 44;
+appearance.floatingMargin = 12;
+appearance.floatingTopClearance = 112;
+tabs.tabBarAppearance = appearance;
+```
+
+容器托管时不要直接修改 `tabs.tabBar` 的 frame、vertical、hidden 或入口结构。独立 `XBTabBarView` 可设置 `vertical = YES`，但位置、尺寸、安全区、键盘和保留区域避让由宿主负责。
 
 ## 与参考组件的能力差异
 

@@ -2,6 +2,23 @@
 #import <Masonry/Masonry.h>
 #import <QuartzCore/QuartzCore.h>
 #import <math.h>
+#if __has_include(<UIKit/UIVerticalBarEdge.h>)
+#import <UIKit/UIVerticalBarEdge.h>
+#endif
+
+XBTabBarPlacement XBTabBarPlacementForTraits(UITraitCollection *traits) {
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 270100
+    if (@available(iOS 27.1, *)) {
+        // 这是硬件/窗口的物理边缘，不随 RTL 镜像。
+        switch (traits.verticalBarEdge) {
+            case UIVerticalBarEdgeLeading: return XBTabBarPlacementFloatingLeft;
+            case UIVerticalBarEdgeTrailing: return XBTabBarPlacementFloatingRight;
+            default: break;
+        }
+    }
+#endif
+    return XBTabBarPlacementBottom;
+}
 
 /// 只替换/移除组件自己的动画，不清空业务可能附加到同一图标的其它动画。
 static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
@@ -27,6 +44,7 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
 @property (nonatomic, strong) UIImageView *backgroundImageView;
 /// 圆角轮廓同时用于背景与命中；不对整个按钮 masksToBounds，保证右上角角标完整显示。
 @property (nonatomic, assign) CGFloat configuredCornerRadius;
+@property (nonatomic, assign) BOOL vertical;
 /// 仅有背景的定制按钮需要此几何锚点；用约束计算圆角45度位置，窗口变化时无需手工重算 frame。
 @property (nonatomic, strong) UIView *badgeCornerAnchor;
 - (void)applyAppearance:(XBTabBarAppearance *)appearance selected:(BOOL)selected;
@@ -69,12 +87,18 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
 /// 统一应用展示状态；角标使用配置值，不自行把0解释为未读或修改业务数据。
 - (void)applyAppearance:(XBTabBarAppearance *)appearance selected:(BOOL)selected {
     XBTabBarItemStyle *style = self.item.style ?: appearance;
+    UIImage *displayImage = selected ? (self.item.selectedImage ?: self.item.image) : self.item.image;
+    if (self.vertical) {
+        style = [style copy];
+        style.layout = displayImage ? XBTabBarItemLayoutImageOnly : XBTabBarItemLayoutTitleOnly;
+        style.contentInsets = UIEdgeInsetsMake(5, 5, 5, 5);
+    }
     self.selected = selected;
     self.configuredCornerRadius = MAX(0, style.cornerRadius);
     [self setNeedsLayout];
     self.enabled = self.item.isEnabled;
     self.alpha = self.enabled ? 1 : 0.4;
-    self.iconView.image = selected ? (self.item.selectedImage ?: self.item.image) : self.item.image;
+    self.iconView.image = displayImage;
     self.iconView.tintColor = selected ? style.selectedColor : style.normalColor;
     self.textLabel.text = self.item.title;
     self.textLabel.font = selected ? (style.selectedTitleFont ?: style.titleFont) : style.titleFont;
@@ -309,11 +333,25 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
 }
 @end
 
+/// 在滚动视口完成自身布局后校准选中项，避免父视图先布局时读到旧的视口高度。
+@interface XBTabBarScrollView : UIScrollView
+@property (nonatomic, copy) void (^layoutDidChange)(void);
+@end
+@implementation XBTabBarScrollView
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    if (self.layoutDidChange) self.layoutDidChange();
+}
+@end
+
 @interface XBTabBarView ()
 @property (nonatomic, strong) NSMutableArray<XBTabBarButton *> *buttons;
-/// 每个入口保留一个等宽槽位，实际按钮可在槽位内缩小、增高或上移，不影响其它入口下标。
+/// 横栏使用等宽槽位，竖栏使用固定行高；方向变化只替换约束，不改变入口身份。
 @property (nonatomic, strong) NSMutableArray<UIView *> *itemSlots;
 @property (nonatomic, strong) UIView *buttonArea;
+@property (nonatomic, strong) UIScrollView *buttonScrollView;
+@property (nonatomic, assign) BOOL needsRevealSelectedItem;
+@property (nonatomic, assign) CGSize lastViewportSize;
 @property (nonatomic, strong) UIView *separator;
 /// 按需创建的背景层，顺序固定为背景图 → 毛玻璃 → 调色遮罩 → 分割线 → 按钮。
 @property (nonatomic, strong) UIImageView *backgroundImageView;
@@ -352,9 +390,18 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
     _selectedIndex = NSNotFound;
     _appearance = [XBTabBarAppearance new];
     _buttonArea = [UIView new];
+    XBTabBarScrollView *scroll = [XBTabBarScrollView new];
+    __weak typeof(self) weakSelf = self;
+    scroll.layoutDidChange = ^{ [weakSelf revealSelectedItemIfNeeded]; };
+    _buttonScrollView = scroll;
+    _buttonScrollView.showsVerticalScrollIndicator = NO;
+    _buttonScrollView.showsHorizontalScrollIndicator = NO;
+    _buttonScrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+    _buttonScrollView.clipsToBounds = NO;
     _separator = [UIView new];
     [self addSubview:_separator];
-    [self addSubview:_buttonArea];
+    [self addSubview:_buttonScrollView];
+    [_buttonScrollView addSubview:_buttonArea];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(reduceTransparencyDidChange:) name:UIAccessibilityReduceTransparencyStatusDidChangeNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(reduceMotionDidChange:) name:UIAccessibilityReduceMotionStatusDidChangeNotification object:nil];
     [self applyAppearance];
@@ -405,10 +452,30 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
         }
         [self.buttons addObject:button];
     }
-    // 等宽只依赖宿主约束，窗口变化无需读取 UIScreen 或手动重算每个按钮的 frame。
+    self.needsRevealSelectedItem = YES;
+    [self applyAppearance];
+}
+
+- (void)setVertical:(BOOL)vertical {
+    if (_vertical == vertical) return;
+    _vertical = vertical;
+    self.needsRevealSelectedItem = vertical;
+    self.buttonScrollView.contentOffset = CGPointZero;
+    [self applyAppearance];
+}
+
+/// 只替换槽位约束，保持按钮、图标、角标和点击对象的身份。
+- (void)layoutItemSlots {
     UIView *previous = nil;
     for (UIView *slot in self.itemSlots) {
-        [slot mas_makeConstraints:^(MASConstraintMaker *make) {
+        [slot mas_remakeConstraints:^(MASConstraintMaker *make) {
+            if (self.isVertical) {
+                make.left.right.equalTo(self.buttonArea);
+                make.height.mas_equalTo(MAX(44, self->_appearance.floatingItemHeight));
+                make.top.equalTo(previous ? previous.mas_bottom : self.buttonArea.mas_top);
+                if (slot == self.itemSlots.lastObject) make.bottom.equalTo(self.buttonArea);
+                return;
+            }
             make.top.bottom.equalTo(self.buttonArea);
             if (previous != nil) {
                 make.leading.equalTo(previous.mas_trailing);
@@ -422,15 +489,42 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
         }];
         previous = slot;
     }
-    [self applyAppearance];
 }
 /// 只渲染状态，绝不调用点击回调，因此路由和页面恢复不会误触刷新或权限请求。
 - (void)setSelectedIndex:(NSUInteger)selectedIndex {
     if (selectedIndex != NSNotFound && (selectedIndex >= _items.count || _items[selectedIndex].kind != XBTabBarItemKindPage)) {
         return;
     }
+    self.needsRevealSelectedItem = self.needsRevealSelectedItem || _selectedIndex != selectedIndex;
     _selectedIndex = selectedIndex;
     [self refreshButtons];
+    [self setNeedsLayout];
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    [self revealSelectedItemIfNeeded];
+}
+
+- (void)revealSelectedItemIfNeeded {
+    CGSize viewport = self.buttonScrollView.bounds.size;
+    if (viewport.width <= 0 || viewport.height <= 0) return;
+    BOOL resized = !CGSizeEqualToSize(self.lastViewportSize, viewport);
+    self.lastViewportSize = viewport;
+    if (self.isVertical && (resized || self.needsRevealSelectedItem) && self.selectedIndex < self.itemSlots.count) {
+        self.needsRevealSelectedItem = NO;
+        [self.buttonArea layoutIfNeeded];
+        CGRect target = self.itemSlots[self.selectedIndex].frame;
+        CGFloat offset = self.buttonScrollView.contentOffset.y;
+        if (CGRectGetMinY(target) < offset) offset = CGRectGetMinY(target);
+        else if (CGRectGetMaxY(target) > offset + viewport.height) offset = CGRectGetMaxY(target) - viewport.height;
+        CGFloat maximum = MAX(0, CGRectGetHeight(self.buttonArea.bounds) - viewport.height);
+        offset = MIN(maximum, MAX(0, offset));
+        // 显式定位也适用于尚未挂窗的独立按钮栏；只在选中项/尺寸变化时执行，不打断用户滚动。
+        if (fabs(self.buttonScrollView.contentOffset.y - offset) > 0.5) {
+            [self.buttonScrollView setContentOffset:CGPointMake(0, offset) animated:NO];
+        }
+    }
 }
 /// 外观作为值保存；对非正高度使用默认值，避免按钮区因错误配置变为不可点。
 - (void)setAppearance:(XBTabBarAppearance *)appearance {
@@ -438,6 +532,7 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
     if (_appearance.contentHeight <= 0) {
         _appearance.contentHeight = 49;
     }
+    self.needsRevealSelectedItem = YES;
     [self applyAppearance];
 }
 
@@ -452,21 +547,35 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
     [self setNeedsLayout];
 }
 
-/// 背景覆盖底部安全区，但按钮只占用 contentHeight；分割线由本视图统一维护。
+/// 横栏按钮区与安全区背景分开；竖栏使用上下8pt内边距和可滚动视口。
 - (void)applyAppearance {
     [self applyBackground];
     self.separator.backgroundColor = _appearance.separatorColor;
+    self.separator.hidden = self.isVertical;
+    self.buttonScrollView.scrollEnabled = self.isVertical;
+    self.buttonScrollView.clipsToBounds = self.isVertical;
+    self.layer.cornerRadius = self.isVertical ? MAX(44, _appearance.floatingWidth) / 2 : 0;
+    self.layer.masksToBounds = self.isVertical;
+    [self.buttonScrollView mas_remakeConstraints:^(MASConstraintMaker *make) {
+        if (self.isVertical) {
+            make.edges.equalTo(self).insets(UIEdgeInsetsMake(8, 0, 8, 0));
+        } else {
+            make.left.equalTo(self.mas_safeAreaLayoutGuideLeft);
+            make.right.equalTo(self.mas_safeAreaLayoutGuideRight);
+            make.top.equalTo(self);
+            make.height.mas_equalTo(self->_appearance.contentHeight);
+        }
+    }];
     [self.buttonArea mas_remakeConstraints:^(MASConstraintMaker *make) {
-        // 背景仍铺满窗口，交互按钮避开侧边系统栏/摄像头；不把左右安全区强制减为0。
-        make.left.equalTo(self.mas_safeAreaLayoutGuideLeft);
-        make.right.equalTo(self.mas_safeAreaLayoutGuideRight);
-        make.top.equalTo(self);
-        make.height.mas_equalTo(_appearance.contentHeight);
+        make.edges.equalTo(self.buttonScrollView);
+        make.width.equalTo(self.buttonScrollView);
+        make.height.mas_equalTo(self.isVertical ? self.buttons.count * MAX(44, self->_appearance.floatingItemHeight) : self->_appearance.contentHeight);
     }];
     [self.separator mas_remakeConstraints:^(MASConstraintMaker *make) {
         make.left.top.right.equalTo(self);
         make.height.mas_equalTo(MAX(0, _appearance.separatorHeight));
     }];
+    [self layoutItemSlots];
     [self refreshButtons];
 }
 
@@ -490,7 +599,7 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
     if (blursBackground && self.blurView == nil) {
         self.blurView = [[UIVisualEffectView alloc] initWithEffect:nil];
         self.blurView.userInteractionEnabled = NO;
-        [self insertSubview:self.blurView belowSubview:self.buttonArea];
+        [self insertSubview:self.blurView belowSubview:self.buttonScrollView];
         [self.blurView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.edges.equalTo(self);
         }];
@@ -500,19 +609,19 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
     if (appearance.backgroundOverlayColor != nil && self.backgroundOverlayView == nil) {
         self.backgroundOverlayView = [UIView new];
         self.backgroundOverlayView.userInteractionEnabled = NO;
-        [self insertSubview:self.backgroundOverlayView belowSubview:self.buttonArea];
+        [self insertSubview:self.backgroundOverlayView belowSubview:self.buttonScrollView];
         [self.backgroundOverlayView mas_makeConstraints:^(MASConstraintMaker *make) {
             make.edges.equalTo(self);
         }];
     }
     // 先有遮罩、后开启毛玻璃时也保持相同顺序，不能让模糊层盖在调色层上。
     if (self.backgroundOverlayView != nil) {
-        [self insertSubview:self.backgroundOverlayView belowSubview:self.buttonArea];
+        [self insertSubview:self.backgroundOverlayView belowSubview:self.buttonScrollView];
     }
     self.backgroundOverlayView.backgroundColor = appearance.backgroundOverlayColor;
     self.backgroundOverlayView.hidden = appearance.backgroundOverlayColor == nil;
     // 偏好通知也会单独更新背景，统一在这里确保分割线在遮罩之上、凸起按钮之下。
-    [self insertSubview:self.separator belowSubview:self.buttonArea];
+    [self insertSubview:self.separator belowSubview:self.buttonScrollView];
 }
 
 /// 系统透明度偏好改变时只更新背景；不切换页面、不重建按钮，也不重新播放动画。
@@ -540,12 +649,16 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
     }
 }
 
-/// 点击槽位等宽不变；默认按钮铺满槽位，定制按钮沿槽位底边上移，不进入 Home Indicator 区域。
+/// 横栏支持定制/凸起按钮；竖栏铺满整行，避免定制尺寸侵占相邻入口或缩小点击区域。
 - (void)applyItemAtIndex:(NSUInteger)index {
     XBTabBarButton *button = self.buttons[index];
     XBTabBarItemStyle *style = button.item.style ?: _appearance;
     UIView *slot = self.itemSlots[index];
     [button mas_remakeConstraints:^(MASConstraintMaker *make) {
+        if (self.isVertical) {
+            make.edges.equalTo(slot);
+            return;
+        }
         make.centerX.equalTo(slot);
         make.bottom.equalTo(slot).offset(-MAX(0, style.raisedHeight));
         if (style.buttonSize.width > 0) {
@@ -556,11 +669,15 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
         }
         make.height.mas_equalTo(style.buttonSize.height > 0 ? style.buttonSize.height : _appearance.contentHeight);
     }];
+    button.vertical = self.isVertical;
     [button applyAppearance:_appearance selected:index == self.selectedIndex && button.item.kind == XBTabBarItemKindPage];
 }
 
 /// 只扩展真实可点击按钮的区域，不把栏上方的整条页面内容变成底栏点击区。
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event {
+    if (self.isVertical) {
+        return [[UIBezierPath bezierPathWithRoundedRect:self.bounds cornerRadius:self.layer.cornerRadius] containsPoint:point];
+    }
     if ([super pointInside:point withEvent:event]) {
         return YES;
     }
@@ -572,6 +689,8 @@ static NSString * const XBTabBarSelectionAnimationKey = @"XBTabBar.selection";
     if (self.hidden || self.alpha <= 0.01 || !self.userInteractionEnabled) {
         return nil;
     }
+    // 纵向由 UIScrollView 命中并接收拖动，不能绕过它把屏外按钮变成点击目标。
+    if (self.isVertical) return [super hitTest:point withEvent:event];
     XBTabBarButton *button = [self buttonAtPoint:point event:event];
     if (button != nil) {
         return button;
